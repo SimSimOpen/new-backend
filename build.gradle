@@ -1,0 +1,84 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'net.jemsit'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+ext {
+	springCloudVersion = "2025.1.2"  // ← verify this against Boot 4.1.0 compatibility
+}
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation project(':auth')
+	implementation project(':common')
+	implementation project(':product')
+
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	runtimeOnly 'org.postgresql:postgresql'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+}
+
+subprojects {
+	apply plugin: 'java'
+	apply plugin: 'io.spring.dependency-management'
+
+	group = 'net.jemsit'
+	version = '0.0.1-SNAPSHOT'
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(21)
+		}
+	}
+
+	repositories {
+		mavenCentral()
+	}
+
+	dependencyManagement {
+		imports {
+			mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.0"
+			mavenBom "org.springframework.cloud:spring-cloud-dependencies:2025.1.2"
+		}
+	}
+
+	dependencies {
+		compileOnly 'org.projectlombok:lombok'
+		annotationProcessor 'org.projectlombok:lombok'
+		testCompileOnly 'org.projectlombok:lombok'
+		testAnnotationProcessor 'org.projectlombok:lombok'
+		implementation 'org.mapstruct:mapstruct:1.6.3'
+		annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+		implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+		implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+		implementation 'org.springframework.boot:spring-boot-starter-validation'
+		implementation 'org.springframework.boot:spring-boot-starter-amqp'
+		testImplementation 'org.springframework.amqp:spring-rabbit-test'
+
+		implementation 'com.fasterxml.jackson.core:jackson-annotations'
+		implementation 'com.fasterxml.jackson.core:jackson-core'
+		implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

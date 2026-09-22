@@ -1,0 +1,2 @@
+rootProject.name = 'simsim'
+include 'auth', 'common', 'product'
