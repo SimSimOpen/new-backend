@@ -1,15 +1,14 @@
 package net.jemsit.common.dto.message;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Getter;
 
-@JsonTypeName("UserAvatarUpdated")
-public class UserAvatarUpdated extends RabbitMQMessage {
+@Getter
+public class UserAvatarUpdated {
+    private final String userId;
+    private final String userAvatarUrl;
 
-    public UserAvatarUpdated(String userId,  String avatarUrl) {
-        super(userId, avatarUrl);
+    public UserAvatarUpdated(String userId, String userAvatarUrl) {
+        this.userId = userId;
+        this.userAvatarUrl = userAvatarUrl;
     }
-
-    protected UserAvatarUpdated() {}
-
-
 }

@@ -26,5 +26,7 @@ public class UserContext {
 
     public static void clear() {
         userToken.remove();
+        userRole.remove();
+        userId.remove();
     }
 }

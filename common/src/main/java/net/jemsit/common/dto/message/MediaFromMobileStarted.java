@@ -1,14 +1,15 @@
 package net.jemsit.common.dto.message;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import net.jemsit.common.data.enums.RabbitMQMessages;
+import lombok.Getter;
+import net.jemsit.common.data.enums.EventMessages;
 
-@JsonTypeName("MediaFromMobileStarted")
-public class MediaFromMobileStarted extends RabbitMQMessage {
+@Getter
+public class MediaFromMobileStarted {
+    private final String userId;
+    private final EventMessages message;
 
-    public MediaFromMobileStarted(String userId, RabbitMQMessages message) {
-        super(userId, message);
+    public MediaFromMobileStarted(String userId, EventMessages message) {
+        this.userId = userId;
+        this.message = message;
     }
-
-    protected MediaFromMobileStarted() {}
 }

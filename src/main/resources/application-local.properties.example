@@ -1,0 +1,25 @@
+# Template for the gitignored local config. Copy to application-local.properties
+# in this same directory and fill in real values:
+#   cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties
+#
+# The copy is loaded unconditionally by the root application.properties through
+#   spring.config.import=...,optional:classpath:application-local.properties
+# and overrides the tracked defaults there. Environment variables of the same
+# name (JWT_SECRET, MINIO_ACCESS_KEY, ...) win over the values in the copy, so
+# deployments can ignore this file entirely.
+#
+# Without either the copy or the environment variables the application does not
+# start: the eager minioClient bean fails with
+#   IllegalArgumentException: AccessKey and SecretKey must not be empty
+# An empty jwt.secret does not stop startup, it just breaks auth quietly:
+# protected routes answer 403 for every token (the empty-key failure is caught
+# as "invalid token") and signing during login/register throws WeakKeyException.
+
+jwt.secret=${JWT_SECRET:replace-with-a-base64-secret-of-at-least-32-bytes}
+
+minio.accessKey=${MINIO_ACCESS_KEY:replace-with-minio-access-key}
+minio.secretKey=${MINIO_SECRET_KEY:replace-with-minio-secret-key}
+
+# Only used on the first boot against a database that has no "admin" user yet.
+# Must satisfy PasswordValidator: 8+ chars, upper, lower, digit, one of @#$%^&+=!
+app.admin.password=${APP_ADMIN_PASSWORD:}
