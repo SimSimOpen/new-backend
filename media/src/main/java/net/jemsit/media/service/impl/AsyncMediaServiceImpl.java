@@ -79,7 +79,7 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
 
             return futures.stream()
                     .map(f -> f.exceptionally(ex -> {
-                        log.error("Upload task failed: {}", ex.getMessage());
+                        log.error("Upload task failed: {}", ex.getMessage(),ex);
                         return null;
                     }))
                     .map(CompletableFuture::join)
