@@ -23,3 +23,11 @@ minio.secretKey=${MINIO_SECRET_KEY:replace-with-minio-secret-key}
 # Only used on the first boot against a database that has no "admin" user yet.
 # Must satisfy PasswordValidator: 8+ chars, upper, lower, digit, one of @#$%^&+=!
 app.admin.password=${APP_ADMIN_PASSWORD:}
+
+# Only read when app.sms.provider=twilio. The default provider is 'log', which
+# writes the OTP to the application log instead of sending a text, so these can
+# stay as placeholders for local development. A Twilio trial account can only
+# message numbers verified in the Twilio console.
+twilio.account-sid=${TWILIO_ACCOUNT_SID:replace-with-twilio-account-sid}
+twilio.auth-token=${TWILIO_AUTH_TOKEN:replace-with-twilio-auth-token}
+twilio.trial-number=${TWILIO_FROM_PHONE:replace-with-twilio-sender-number}

@@ -1,0 +1,9 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation project(':common')
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'com.twilio.sdk:twilio:10.9.2'
+}
