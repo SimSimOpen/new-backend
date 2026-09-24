@@ -38,3 +38,8 @@ out/
 
 ### Local secrets (application-local.properties.example is the tracked template) ###
 application-local.properties
+
+### Deploy secrets (.env.example is the tracked template) ###
+.env
+.env.*
+!.env.example

@@ -1,0 +1,27 @@
+.git
+.github
+.gradle
+.idea
+.vscode
+.gitattributes
+.gitignore
+*.log
+
+# build output: the image compiles from source, and the host's build dirs are
+# stale artifacts that would only bloat the context
+**/build/
+**/out/
+**/.gradle/
+
+# real secrets. application-local.properties is gitignored but sits on the
+# classpath, so without this rule it gets COPYed into the build stage and
+# packaged into app.jar, which is then pushed to GHCR.
+**/application-local.properties
+**/application-local.properties.example
+.env
+.env.*
+!.env.example
+
+Dockerfile
+docker-compose.yml
+HELP.md

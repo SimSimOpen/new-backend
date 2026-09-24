@@ -1,4 +1,4 @@
-name: CI + Deploy (Sim-Sim Auth service)
+name: CI + Deploy (Sim-Sim monolith)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 concurrency:
-  group: angular-${{ github.ref }}
+  group: simsim-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -16,20 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: read
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Configure Gradle GitHub Packages creds
-        run: |
-          mkdir -p ~/.gradle
-          cat > ~/.gradle/gradle.properties <<EOF
-          gpr.user=${{ github.actor }}
-          gpr.key=${{ secrets.MY_GITHUB_TOKEN }}
-          EOF
-          chmod 600 ~/.gradle/gradle.properties
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -38,8 +28,8 @@ jobs:
           java-version: "21"
           cache: gradle
 
-      - name: Build (skip tests)
-        run: ./gradlew clean build -x test --no-daemon
+      - name: Build
+        run: ./gradlew clean build --no-daemon
 
 
   docker:
@@ -76,25 +66,19 @@ jobs:
           tags: |
             ghcr.io/${{ env.IMAGE_NAME }}:latest
             ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
-          secrets: |
-            gradle_user=${{ github.actor }}
-            gradle_token=${{ secrets.MY_GITHUB_TOKEN }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
     name: Deploy to VPS
     needs: docker
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
 
     steps:
 
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Check repo files
-        run: ls -la
 
       - name: Copy docker-compose to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -104,7 +88,7 @@ jobs:
           port: ${{ secrets.VPS_SSH_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "docker-compose.yml"
-          target: /opt/backend/auth-service
+          target: /opt/backend/simsim
           overwrite: true
           strip_components: 0
 
@@ -117,14 +101,15 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /opt/backend/auth-service
-            
-            # write .env securely
-            cat > .env << EOF
+            cd /opt/backend/simsim
+
+            # quoted delimiter: an unquoted one lets the remote shell expand $ and
+            # backticks inside the secret, silently corrupting values like JWT_SECRET
+            cat > .env <<'EOF'
             ${{ secrets.ENV_FILE }}
             EOF
             chmod 600 .env
-            
+
             docker compose pull
             docker compose up -d --remove-orphans
-            docker image prune -f
+            docker image prune -f --filter "until=72h"

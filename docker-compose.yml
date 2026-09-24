@@ -1,30 +1,37 @@
 services:
-  auth-service:
-    image: ghcr.io/simsimopen/sim-sim-auth-service:latest
-    container_name: auth-service
+  simsim:
+    image: ghcr.io/simsimopen/simsim:latest
+    container_name: simsim
+    # the media module forks ffmpeg; without an init process its children can outlive it
+    init: true
     env_file:
       - .env
     environment:
       - TZ=Asia/Tashkent
-      - SPRING_PROFILES_ACTIVE=prod
-    command: [
-      "java",
-      "-Duser.timezone=Asia/Tashkent",
-      "-Xms128m",
-      "-Xmx384m",
-      "-XX:+UseG1GC",
-      "-XX:MaxGCPauseMillis=200",
-      "-jar",
-      "app.jar"
-    ]
-#    deploy:
-#      resources:
-#        limits:
-#          cpus: '1.0'          # Limit to 4 CPU core
-#          memory: 512M         # Hard limit (container killed if exceeded)
-#        reservations:
-#          cpus: '0.5'          # Guaranteed CPU allocation
-#          memory: 56M
+      # JVM flags live here rather than in a command: array, which would override the image ENTRYPOINT
+      - JAVA_TOOL_OPTIONS=-Duser.timezone=Asia/Tashkent -Xms512m -Xmx1024m -XX:MaxMetaspaceSize=384m -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+    ports:
+      # this container is the edge now that the gateway is retired; the reverse
+      # proxy behind api.simsim.fit must point at it instead of sim-sim-gateway
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1600M
+        reservations:
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: always
     networks:
       - simsim
