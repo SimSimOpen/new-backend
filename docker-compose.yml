@@ -1,6 +1,6 @@
 services:
   simsim:
-    image: ghcr.io/simsimopen/simsim:latest
+    image: ghcr.io/simsimopen/new-backend:latest
     container_name: simsim
     # the media module forks ffmpeg; without an init process its children can outlive it
     init: true
