@@ -6,6 +6,7 @@ import net.jemsit.auth.data.repository.UserRepository;
 import net.jemsit.auth.mapper.AuthMapper;
 import net.jemsit.auth.service.AuthService;
 import net.jemsit.auth.service.JwtService;
+import net.jemsit.common.api.OperatorFeedApi;
 import net.jemsit.common.api.ProfileApi;
 import net.jemsit.common.data.enums.Roles;
 import net.jemsit.common.dto.request.auth.AuthenticationRequestDTO;
@@ -32,6 +33,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper authMapper;
     private final ProfileApi profileApi;
+    // Interface from :common, implementation in the root shell - this module never sees :notify.
+    private final OperatorFeedApi operatorFeedApi;
 
     @Transactional
     @Override
@@ -63,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
         var resp = createProfileForUser(savedUser.getId());
         savedUser.setProfileId(resp.id());
         userRepository.save(savedUser);
+        operatorFeedApi.accountRegistered(Roles.CLIENT, savedUser.getUsername());
     }
 
     @Override
@@ -76,6 +80,7 @@ public class AuthServiceImpl implements AuthService {
         var resp = createProfileForUser(savedUser.getId());
         savedUser.setProfileId(resp.id());
         userRepository.save(savedUser);
+        operatorFeedApi.accountRegistered(Roles.AGENT, savedUser.getUsername());
     }
 
     @Override
@@ -105,6 +110,12 @@ public class AuthServiceImpl implements AuthService {
             savedUser.setUpdatedAt(LocalDateTime.now());
             var resp = createProfileForUser(savedUser.getId());
             savedUser.setProfileId(resp.id());
+            // This branch provisions a brand-new account rather than authenticating an existing one,
+            // and it is reached from GET /api/event/verify-otp through AuthApiImpl - so in practice this
+            // is the signup route that actually gets used. Only the creation branch announces anything.
+            // Note the username here is the phone number the OTP was sent to, so that is what the
+            // operator's card shows.
+            operatorFeedApi.accountRegistered(Roles.CLIENT, savedUser.getUsername());
             return authMapper.toDTO(userRepository.saveAndFlush(savedUser), tokenModel);
         } else {
             var existing = user.get();

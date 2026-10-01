@@ -129,4 +129,10 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
 
     @Query("SELECT p.viewCount FROM Property p WHERE p.id = :id")
     long findViewCountByPropertyId(@Param("id") Long id);
+
+    // Scalar projection, not findById: this is called from the public, unauthenticated view counter,
+    // and Property's @OneToOne location and amenities are EAGER, so loading the entity would put two
+    // extra joins on a route that only needs a name.
+    @Query("SELECT p.title FROM Property p WHERE p.id = :id")
+    String findTitleById(@Param("id") Long id);
 }

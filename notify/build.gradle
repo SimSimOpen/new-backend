@@ -1,0 +1,51 @@
+plugins {
+    id 'java-library'
+}
+
+// The coordinate a host project names in `implementation 'net.jemsit:notify'`. With includeBuild in
+// the host's settings.gradle, Gradle substitutes this project for that coordinate and builds it from
+// source - no publishing step and no repository of any kind.
+group = 'net.jemsit'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // BOM only, so nothing below needs a version. This is Gradle's native platform dependency rather
+    // than the io.spring.dependency-management plugin - one less plugin to resolve offline.
+    compileOnly platform('org.springframework.boot:spring-boot-dependencies:4.1.0')
+
+    // compileOnly, deliberately. This module is dropped into an existing Spring Boot web app that
+    // already has MVC and a database on its classpath, so it must not drag in its own copy of either or
+    // argue with the host's Boot version. The host provides all of it at runtime.
+    //
+    // The consequence is worth stating plainly: a host needs spring-web MVC and a DataSource. Every
+    // Boot web app that talks to a database already has both.
+    compileOnly 'org.springframework.boot:spring-boot-starter-webmvc'
+
+    // spring-jdbc and not spring-boot-starter-jdbc. The starter would bring a second HikariCP and its
+    // own DataSourceAutoConfiguration opinions into a host that already picked a pool; the library
+    // brings JdbcTemplate and nothing else.
+    compileOnly 'org.springframework:spring-jdbc'
+
+    compileOnly 'org.projectlombok:lombok'
+    // The BOM has to be repeated here. A platform() dependency applies only to the configuration it was
+    // declared on, so the compileOnly one above does not reach annotationProcessor and lombok resolves
+    // without a version - a failure that surfaces only once annotation processing actually runs, which
+    // makes it look like a lombok problem rather than a missing constraint.
+    annotationProcessor platform('org.springframework.boot:spring-boot-dependencies:4.1.0')
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    // Lets Spring infer @RequestParam names without an explicit value on each one.
+    options.compilerArgs << '-parameters'
+}

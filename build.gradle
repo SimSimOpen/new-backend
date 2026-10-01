@@ -24,6 +24,10 @@ dependencies {
 	implementation project(':profile')
 	implementation project(':media')
 	implementation project(':notification')
+	// Only the shell may see this. product and auth publish through the OperatorFeedApi facade in
+	// :common, so neither of their build.gradle files names :notify - which keeps the module's
+	// NotifyPublisher optional everywhere it is used, and keeps the app bootable when notify is off.
+	implementation project(':notify')
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'

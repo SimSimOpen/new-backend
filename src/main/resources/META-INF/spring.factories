@@ -1,0 +1,7 @@
+# EnvironmentPostProcessors are registered here, keyed by the interface's fully qualified name. Boot 4
+# moved the interface from org.springframework.boot.env to org.springframework.boot and marks the old
+# one for removal in 4.2, so this key is the new one. Auto-configurations are keyed elsewhere, in
+# META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports, which the notify
+# module ships for itself.
+org.springframework.boot.EnvironmentPostProcessor=\
+  net.jemsit.simsim.config.NotifyFailClosedEnvironmentPostProcessor

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.api.AuthApi;
 import net.jemsit.common.api.MediaApi;
+import net.jemsit.common.api.OperatorFeedApi;
 import net.jemsit.common.data.enums.EventMessages;
 import net.jemsit.common.data.enums.Roles;
 import net.jemsit.common.data.enums.property.ListingStatus;
@@ -44,10 +45,18 @@ public class PropertyServiceImpl implements PropertyService {
     private final MediaApi mediaApi;
     private final AuthApi authApi;
     private final ApplicationEventPublisher eventPublisher;
+    // Lives in :common, implemented in the root shell. This module never sees :notify, so the feed
+    // stays optional and the app still boots with it switched off.
+    private final OperatorFeedApi operatorFeedApi;
 
     @Override
     public String add(PropertyRequestDTO request) {
-        propertyRepository.save(propertyMapper.toEntity(request));
+        Property saved = propertyRepository.save(propertyMapper.toEntity(request));
+        // This route takes a whole DTO, so it can create a listing that is already public without ever
+        // passing through update(), which is where the other goes-live hook lives.
+        if (saved.getListingStatus() == ListingStatus.ACTIVE) {
+            operatorFeedApi.listingWentLive(saved.getId(), saved.getTitle(), saved.getPrice(), saved.getAgent());
+        }
         return "Property information added to product successfully.";
     }
 
@@ -55,6 +64,9 @@ public class PropertyServiceImpl implements PropertyService {
     @Transactional
     public PropertyResponseDTO update(Long id, PropertyRequestDTO request) {
         Property toUpdate = requireProperty(id);
+        // Read before the DTO is applied: both PUT /property/update/{id} and /property/update-draft/{id}
+        // funnel through here, and only the transition into ACTIVE should be announced, not every save.
+        boolean wasActive = toUpdate.getListingStatus() == ListingStatus.ACTIVE;
 
         if (request.title() != null && !request.title().isEmpty()) {
             toUpdate.setTitle(request.title());
@@ -106,6 +118,14 @@ public class PropertyServiceImpl implements PropertyService {
         }
 
         Property updated = propertyRepository.save(toUpdate);
+        if (!wasActive && updated.getListingStatus() == ListingStatus.ACTIVE) {
+            // No extra read: the saved entity already carries all four. The publish is deferred until
+            // after this transaction commits and then runs on its own connection, so a rolled-back
+            // update announces nothing - and a failing publish cannot abort this one, which on
+            // Postgres would silently discard the realtor's change behind a 200 response.
+            operatorFeedApi.listingWentLive(updated.getId(), updated.getTitle(),
+                    updated.getPrice(), updated.getAgent());
+        }
         return propertyMapper.toDtoWithShortAddress(updated,
                 propertyFilterService.getLocationList(updated.getLocation()));
     }
@@ -210,7 +230,13 @@ public class PropertyServiceImpl implements PropertyService {
             throw new UserException("Property not found with id: " + id);
         }
         propertyRepository.incrementViewCount(id);
-        return propertyRepository.findViewCountByPropertyId(id);
+        long views = propertyRepository.findViewCountByPropertyId(id);
+        // Predicate first: most views are not milestones, and this is a public, unauthenticated route
+        // that should not pay for a title lookup it will throw away.
+        if (operatorFeedApi.isViewMilestone(views)) {
+            operatorFeedApi.viewMilestone(id, views, propertyRepository.findTitleById(id));
+        }
+        return views;
     }
 
     private Page<PropertyResponseDTO> toDtoPage(Page<Property> properties) {

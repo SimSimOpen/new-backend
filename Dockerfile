@@ -9,6 +9,7 @@ COPY auth/build.gradle auth/
 COPY common/build.gradle common/
 COPY media/build.gradle media/
 COPY notification/build.gradle notification/
+COPY notify/build.gradle notify/
 COPY product/build.gradle product/
 COPY profile/build.gradle profile/
 RUN chmod +x gradlew && ./gradlew --no-daemon projects

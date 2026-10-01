@@ -2,6 +2,7 @@ package net.jemsit.simsim.config;
 
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -25,7 +26,8 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            @Value("${notify.base-path:/notify}") String notifyBasePath) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
@@ -46,7 +48,13 @@ public class SecurityConfig {
                                 "/api/product/v1/property/filter",
                                 "/api/product/v1/property/*/views",
                                 "/actuator/health",
-                                "/error"
+                                "/error",
+                                // The notify module guards its own endpoints with NotifyTokenInterceptor
+                                // using a shared secret. Security has to stand aside or its 401 entry
+                                // point fires first and the phone never reaches the interceptor. Built
+                                // from the same property JwtFilter skips on, so the module, this list
+                                // and that filter cannot drift apart.
+                                notifyBasePath + "/**"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
