@@ -40,7 +40,7 @@ public class OperatorFeedApiImpl implements OperatorFeedApi {
      * One card per listing per this many views, plus the very first view. Kept here rather than at the
      * call site so the cadence is set once and {@code incrementViews} stays a single line.
      */
-    private static final int VIEW_MILESTONE = 25;
+    private static final int VIEW_MILESTONE = 1;
 
     private final OperatorFeedDispatcher dispatcher;
 
