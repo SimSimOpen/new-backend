@@ -71,13 +71,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void registerAgent(RegisterRequestDTO request) {
+        var userExists = userRepository.findByUsernameOrEmail(request.username(), request.email());
+        if (userExists.isPresent()) {
+            throw new UserException("User with given username or email already exists");
+        }
         User newUser = new User();
         newUser.setUsername(request.username());
         newUser.setPassword(passwordEncoder.encode(request.password()));
         newUser.setEmail(request.email());
         newUser.setAuthorities(List.of(Roles.AGENT));
+        newUser.setPhoneNumber(normalizePhone(request.phoneNumber()));
         var savedUser = userRepository.save(newUser);
-        var resp = createProfileForUser(savedUser.getId());
+        var resp = createProfileForUser(savedUser.getId(), savedUser.getPhoneNumber());
         savedUser.setProfileId(resp.id());
         userRepository.save(savedUser);
         operatorFeedApi.accountRegistered(Roles.AGENT, savedUser.getUsername());
@@ -103,12 +108,14 @@ public class AuthServiceImpl implements AuthService {
         if (user.isEmpty()) {
             User newUser = new User();
             newUser.setUsername(requestDTO.username());
+            // OTP accounts are keyed by the phone number the code was sent to
+            newUser.setPhoneNumber(normalizePhone(requestDTO.username()));
             newUser.setAuthorities(List.of(Roles.CLIENT));
             var savedUser = userRepository.save(newUser);
             var tokenModel = createTokenModel(savedUser);
             savedUser.addToken(tokenModel);
             savedUser.setUpdatedAt(LocalDateTime.now());
-            var resp = createProfileForUser(savedUser.getId());
+            var resp = createProfileForUser(savedUser.getId(), savedUser.getPhoneNumber());
             savedUser.setProfileId(resp.id());
             // This branch provisions a brand-new account rather than authenticating an existing one,
             // and it is reached from GET /api/event/verify-otp through AuthApiImpl - so in practice this
@@ -137,17 +144,25 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private ProfileResponseDTO createProfileForUser(Long userId) {
+        return createProfileForUser(userId, null);
+    }
+
+    private ProfileResponseDTO createProfileForUser(Long userId, String phoneNumber) {
         ProfileRequestDTO request = new ProfileRequestDTO(
                 null,
                 userId,
                 null,
-                null,
+                phoneNumber,
                 null,
                 null,
                 null,
                 null
         );
         return profileApi.createProfile(request);
+    }
+
+    private static String normalizePhone(String phoneNumber) {
+        return phoneNumber == null || phoneNumber.isBlank() ? null : phoneNumber.trim();
     }
 
 }

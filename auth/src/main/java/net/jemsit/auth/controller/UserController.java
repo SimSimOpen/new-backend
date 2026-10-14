@@ -1,9 +1,12 @@
 package net.jemsit.auth.controller;
 
+import jakarta.validation.Valid;
+import net.jemsit.auth.dto.AgentUpdateRequestDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
 import net.jemsit.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,5 +24,17 @@ public class UserController {
     @PutMapping("update-user")
     public ResponseEntity<?> updateUser(@RequestBody UserDetailsRequestDTO request) {
         return ResponseEntity.ok(userService.updateUserDetails(request));
+    }
+
+    @GetMapping("admin/agents")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> getAgents() {
+        return ResponseEntity.ok(userService.getAgents());
+    }
+
+    @PutMapping("admin/agents/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> updateAgent(@PathVariable Long id, @Valid @RequestBody AgentUpdateRequestDTO request) {
+        return ResponseEntity.ok(userService.updateAgent(id, request));
     }
 }

@@ -44,7 +44,8 @@ public class CreateAdminUser implements ApplicationRunner {
                         password,
                         email,
                         "",
-                        ""
+                        "",
+                        null
                 ))
         );
     }
