@@ -1,5 +1,6 @@
 package net.jemsit.product.data.repository.property;
 
+import net.jemsit.common.data.enums.property.ListingStatus;
 import net.jemsit.common.dto.response.product.propeprty.PropertiesStats;
 import net.jemsit.product.data.model.property.Property;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,8 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
     List<String> findShortAddressById(long locationId);
 
     Page<Property> findByAgentID(Long id, Pageable pageable);
+
+    long countByListingStatus(ListingStatus listingStatus);
 
     @Query(value = "SELECT * FROM properties WHERE listing_status = 'ACTIVE'", nativeQuery = true)
     Page<Property> findAllPublished(Pageable pageable);

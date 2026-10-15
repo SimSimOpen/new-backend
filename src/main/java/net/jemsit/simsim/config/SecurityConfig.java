@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -58,6 +59,9 @@ public class SecurityConfig {
                                 // and that filter cannot drift apart.
                                 notifyBasePath + "/**"
                         ).permitAll()
+                        // Read-only: the client's home page lists categories anonymously, but
+                        // updating one (PUT on the same path) still requires an admin.
+                        .requestMatchers(HttpMethod.GET, "/api/product/v1/category/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
