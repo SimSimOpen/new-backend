@@ -32,6 +32,14 @@ public class UserController {
         return ResponseEntity.ok(userService.getAgents());
     }
 
+    @GetMapping("admin/clients")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> getClients(@RequestParam(defaultValue = "") String search,
+                                        @RequestParam(defaultValue = "0") int page,
+                                        @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(userService.getClients(search, page, size));
+    }
+
     @PutMapping("admin/agents/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<?> updateAgent(@PathVariable Long id, @Valid @RequestBody AgentUpdateRequestDTO request) {

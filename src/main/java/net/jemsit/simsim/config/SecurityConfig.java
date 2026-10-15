@@ -40,7 +40,9 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .requestMatchers(
                                 "/api/auth/v1/authenticate",
+                                "/api/auth/v1/firebase-login",
                                 "/api/event/send-otp",
+                                "/api/event/send-otp-telegram",
                                 "/api/event/verify-otp",
                                 "/api/auth/v1/register/**",
                                 "/api/profile/v1/create",

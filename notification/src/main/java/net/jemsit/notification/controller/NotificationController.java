@@ -6,6 +6,7 @@ import net.jemsit.common.UserContext;
 import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
 import net.jemsit.notification.service.NotificationService;
 import net.jemsit.notification.service.SmsRequestDTO;
+import net.jemsit.notification.telegram.TelegramOtpService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,7 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final TelegramOtpService telegramOtpService;
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream() {
@@ -35,6 +37,12 @@ public class NotificationController {
     public Map<String, Object> sendOtp(@RequestBody SmsRequestDTO request) {
         notificationService.sendOtp(request);
         return Map.of("success", true, "message", "OTP sent successfully");
+    }
+
+    /** Sends the code to the user's Telegram, or returns the bot link if the number is not linked yet. */
+    @PostMapping("/send-otp-telegram")
+    public TelegramOtpService.Result sendOtpTelegram(@RequestBody SmsRequestDTO request) {
+        return telegramOtpService.requestCode(request.phoneNumber());
     }
 
     @GetMapping("/verify-otp")

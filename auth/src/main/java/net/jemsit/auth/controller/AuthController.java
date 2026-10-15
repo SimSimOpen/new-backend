@@ -1,6 +1,8 @@
 package net.jemsit.auth.controller;
 
+import net.jemsit.auth.dto.FirebaseLoginRequestDTO;
 import net.jemsit.auth.service.AuthService;
+import net.jemsit.auth.service.FirebaseTokenVerifier;
 import net.jemsit.common.dto.request.auth.AuthenticationRequestDTO;
 import net.jemsit.common.dto.request.auth.RegisterRequestDTO;
 import jakarta.validation.Valid;
@@ -17,10 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final FirebaseTokenVerifier firebaseTokenVerifier;
 
     @PostMapping("authenticate")
     public ResponseEntity<?> authenticate(@RequestBody AuthenticationRequestDTO request) {
         return ResponseEntity.ok(authService.authenticate(request));
+    }
+
+    @PostMapping("firebase-login")
+    public ResponseEntity<?> firebaseLogin(@Valid @RequestBody FirebaseLoginRequestDTO request) {
+        String phoneNumber = firebaseTokenVerifier.verifyPhoneNumber(request.idToken());
+        return ResponseEntity.ok(authService.authenticateWithOtp(new AuthenticationRequestDTO(phoneNumber, null)));
     }
 
     @PostMapping("register/client")

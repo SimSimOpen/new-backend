@@ -4,6 +4,8 @@ import net.jemsit.auth.data.model.User;
 import net.jemsit.auth.data.repository.UserRepository;
 import net.jemsit.auth.dto.AgentResponseDTO;
 import net.jemsit.auth.dto.AgentUpdateRequestDTO;
+import net.jemsit.auth.dto.ClientResponseDTO;
+import net.jemsit.auth.dto.PageResponseDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
 import net.jemsit.auth.mapper.AuthMapper;
 import net.jemsit.auth.service.UserService;
@@ -16,6 +18,7 @@ import net.jemsit.common.dto.response.auth.UserDetailsResponseDTO;
 import net.jemsit.common.exceptions.UserException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,6 +117,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public PageResponseDTO<ClientResponseDTO> getClients(String search, int page, int size) {
+        // The UI formats numbers as "+998 90 123 45 67" while accounts store "+998901234567"
+        String term = search == null ? "" : search.trim();
+        if (term.matches("[+\\d\\s()-]+")) {
+            term = term.replaceAll("[\\s()-]", "");
+        }
+        var pageable = PageRequest.of(Math.max(page, 0), Math.clamp(size, 1, 100));
+        return PageResponseDTO.of(userRepository.findClients(term, pageable),
+                user -> toClientDto(user, findProfile(user.getProfileId())));
+    }
+
+    @Override
     @Transactional
     public AgentResponseDTO deactivateAgent(Long id) {
         var user = findAgent(id);
@@ -155,6 +170,33 @@ public class UserServiceImpl implements UserService {
                 user.getDeletedAt(),
                 profile
         );
+    }
+
+    private ClientResponseDTO toClientDto(User user, ProfileResponseDTO profile) {
+        boolean phoneLogin = user.getPassword() == null;
+        String phone = firstNonBlank(user.getPhoneNumber(), profile == null ? null : profile.phoneNumber(),
+                // OTP accounts created before phone_number was filled in only have it as the username
+                phoneLogin ? user.getUsername() : null);
+        return new ClientResponseDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                phone,
+                phoneLogin ? "PHONE" : "PASSWORD",
+                !Boolean.TRUE.equals(user.getIsDeleted()),
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
+                profile
+        );
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     // updateProfile skips nulls, so an empty string is what clears a field the admin emptied
