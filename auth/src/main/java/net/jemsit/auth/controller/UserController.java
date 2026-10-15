@@ -37,4 +37,16 @@ public class UserController {
     public ResponseEntity<?> updateAgent(@PathVariable Long id, @Valid @RequestBody AgentUpdateRequestDTO request) {
         return ResponseEntity.ok(userService.updateAgent(id, request));
     }
+
+    @DeleteMapping("admin/agents/{id}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> deactivateAgent(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.deactivateAgent(id));
+    }
+
+    @PostMapping("admin/agents/{id}/reactivate")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> reactivateAgent(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.reactivateAgent(id));
+    }
 }

@@ -16,4 +16,8 @@ public interface UserService {
 
     AgentResponseDTO updateAgent(Long id, AgentUpdateRequestDTO request);
 
+    AgentResponseDTO deactivateAgent(Long id);
+
+    AgentResponseDTO reactivateAgent(Long id);
+
 }

@@ -44,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(requestDTO.password(), user.getPassword())) {
             throw new UserException("Password is incorrect");
         }
+        requireActive(user);
         var tokenModel = createTokenModel(user);
         user.addToken(tokenModel);
         user.setUpdatedAt(LocalDateTime.now());
@@ -126,10 +127,17 @@ public class AuthServiceImpl implements AuthService {
             return authMapper.toDTO(userRepository.saveAndFlush(savedUser), tokenModel);
         } else {
             var existing = user.get();
+            requireActive(existing);
             var tokenModel = createTokenModel(existing);
             existing.addToken(tokenModel);
             existing.setUpdatedAt(LocalDateTime.now());
             return authMapper.toDTO(userRepository.saveAndFlush(existing), tokenModel);
+        }
+    }
+
+    private static void requireActive(User user) {
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new UserException("This account has been deactivated");
         }
     }
 

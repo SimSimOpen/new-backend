@@ -14,6 +14,7 @@ public record AgentResponseDTO(
         List<Roles> authorities,
         Boolean enabled,
         LocalDateTime createdAt,
+        LocalDateTime deletedAt,
         ProfileResponseDTO profile
 ) {
 }

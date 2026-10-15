@@ -65,7 +65,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<AgentResponseDTO> getAgents() {
-        return userRepository.findAllByIsDeletedFalseOrderByCreatedAtDesc()
+        // Soft-deleted agents are included (enabled = false) so they can be reactivated from the list
+        return userRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .filter(this::isAgent)
                 .map(user -> toAgentDto(user, findProfile(user.getProfileId())))
@@ -112,6 +113,31 @@ public class UserServiceImpl implements UserService {
         return toAgentDto(userRepository.saveAndFlush(user), profile);
     }
 
+    @Override
+    @Transactional
+    public AgentResponseDTO deactivateAgent(Long id) {
+        var user = findAgent(id);
+        if (!Boolean.TRUE.equals(user.getIsDeleted())) {
+            user.softDelete();
+        }
+        return toAgentDto(userRepository.saveAndFlush(user), findProfile(user.getProfileId()));
+    }
+
+    @Override
+    @Transactional
+    public AgentResponseDTO reactivateAgent(Long id) {
+        var user = findAgent(id);
+        user.setIsDeleted(false);
+        user.setDeletedAt(null);
+        return toAgentDto(userRepository.saveAndFlush(user), findProfile(user.getProfileId()));
+    }
+
+    private User findAgent(Long id) {
+        return userRepository.findById(id)
+                .filter(this::isAgent)
+                .orElseThrow(() -> new UserException("Agent not found"));
+    }
+
     private boolean isAgent(User user) {
         return user.getAuthorities().stream()
                 .anyMatch(authority -> Roles.AGENT.name().equals(authority.getAuthority()));
@@ -124,8 +150,9 @@ public class UserServiceImpl implements UserService {
                 user.getEmail(),
                 user.getPhoneNumber() != null || profile == null ? user.getPhoneNumber() : profile.phoneNumber(),
                 authMapper.mapAuthoritiesToRoles(user.getAuthorities()),
-                true,
+                !Boolean.TRUE.equals(user.getIsDeleted()),
                 user.getCreatedAt(),
+                user.getDeletedAt(),
                 profile
         );
     }

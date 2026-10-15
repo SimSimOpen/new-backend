@@ -11,7 +11,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsernameOrEmail(String username, String email);
 
-    List<User> findAllByIsDeletedFalseOrderByCreatedAtDesc();
+    List<User> findAllByOrderByCreatedAtDesc();
 
     List<User> findAllByPhoneNumberIsNullAndProfileIdIsNotNull();
 
