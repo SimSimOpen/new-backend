@@ -45,6 +45,8 @@ public class SecurityConfig {
                                 "/api/event/send-otp",
                                 "/api/event/send-otp-telegram",
                                 "/api/event/verify-otp",
+                                // Presence heartbeats come from anonymous website visitors too.
+                                "/api/event/presence/heartbeat",
                                 "/api/auth/v1/register/**",
                                 "/api/profile/v1/create",
                                 "/api/product/v1/property/all/published",

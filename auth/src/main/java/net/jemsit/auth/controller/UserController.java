@@ -3,6 +3,7 @@ package net.jemsit.auth.controller;
 import jakarta.validation.Valid;
 import net.jemsit.auth.dto.AgentUpdateRequestDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
+import net.jemsit.auth.service.UserDashboardService;
 import net.jemsit.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserDashboardService userDashboardService;
 
     @GetMapping("details")
     public ResponseEntity<?> getUserDetails() {
@@ -30,6 +32,12 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     public ResponseEntity<?> getAgents() {
         return ResponseEntity.ok(userService.getAgents());
+    }
+
+    @GetMapping("admin/stats")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> getUserDashboard() {
+        return ResponseEntity.ok(userDashboardService.getUserDashboard());
     }
 
     @GetMapping("admin/clients")
