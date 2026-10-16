@@ -8,6 +8,9 @@ public  record PropertyFilterRequestDTO(
         PropertyType type,
         OfferType offerType,
         ListingStatus listingStatus,
-        OccupancyStatus occupancyStatus
+        OccupancyStatus occupancyStatus,
+        Long regionId,
+        Long districtId,
+        Long placeId
 ) {
 }

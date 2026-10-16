@@ -62,6 +62,8 @@ public class SecurityConfig {
                         // Read-only: the client's home page lists categories anonymously, but
                         // updating one (PUT on the same path) still requires an admin.
                         .requestMatchers(HttpMethod.GET, "/api/product/v1/category/**").permitAll()
+                        // Read-only lookup lists (regions/districts/places) for the public browse filter.
+                        .requestMatchers(HttpMethod.GET, "/api/product/v1/location/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

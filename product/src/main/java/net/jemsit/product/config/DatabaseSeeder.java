@@ -24,6 +24,9 @@ public class DatabaseSeeder implements ApplicationRunner {
     private static final TypeReference<List<Map<String, Object>>> ROWS = new TypeReference<>() {
     };
 
+    // Mahalla ids in data/mahallas.json are offset by this so they never collide with village ids.
+    private static final long MAHALLA_ID_OFFSET = 10_000_000L;
+
     private final ObjectMapper objectMapper;
     private final JdbcTemplate jdbc;
 
@@ -37,6 +40,11 @@ public class DatabaseSeeder implements ApplicationRunner {
         }
         if (isEmpty("villages")) {
             seedVillages();
+        }
+        // Mahallas share the villages table but are seeded separately, so databases that were
+        // seeded before this file existed still pick them up on the next start.
+        if (!hasMahallas()) {
+            seedMahallas();
         }
     }
 
@@ -67,6 +75,20 @@ public class DatabaseSeeder implements ApplicationRunner {
                     row.get("id"), row.get("district_id"), row.get("name_uz"), row.get("name_oz"), row.get("name_ru"));
         }
         log.info("Seeded {} villages", countOf("villages"));
+    }
+
+    private boolean hasMahallas() {
+        Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM villages WHERE id >= ?", Integer.class, MAHALLA_ID_OFFSET);
+        return count != null && count > 0;
+    }
+
+    private void seedMahallas() {
+        List<Object[]> batch = readRows("data/mahallas.json").stream()
+                .map(row -> new Object[]{row.get("id"), row.get("district_id"), row.get("name_uz"), row.get("name_oz"), row.get("name_ru")})
+                .toList();
+        jdbc.batchUpdate("INSERT INTO villages (id, district_id, name_uz, name_oz, name_ru) VALUES (?, ?, ?, ?, ?) "
+                + "ON CONFLICT (id) DO NOTHING", batch);
+        log.info("Seeded {} mahallas", batch.size());
     }
 
     private Integer countOf(String table) {

@@ -9,6 +9,7 @@ import net.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
 import net.jemsit.product.data.model.property.Property;
 import net.jemsit.product.data.model.property.PropertyLocation;
 import net.jemsit.product.data.repository.property.PropertyRepository;
+import net.jemsit.product.mapper.LocationNames;
 import net.jemsit.product.mapper.PropertyMapper;
 import net.jemsit.product.service.PropertyFilterService;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,9 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
                     nameOf(filterRequest.category()),
                     nameOf(filterRequest.offerType()),
                     nameOf(filterRequest.occupancyStatus()),
+                    filterRequest.regionId(),
+                    filterRequest.districtId(),
+                    filterRequest.placeId(),
                     pageable
             );
             return toDtoPage(result);
@@ -65,6 +69,15 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
             if (filterRequest.occupancyStatus() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("occupancyStatus"), filterRequest.occupancyStatus()));
             }
+            if (filterRequest.regionId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("location").get("regionID"), filterRequest.regionId()));
+            }
+            if (filterRequest.districtId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("location").get("districtID"), filterRequest.districtId()));
+            }
+            if (filterRequest.placeId() != null) {
+                predicates.add(criteriaBuilder.equal(root.get("location").get("placeID"), filterRequest.placeId()));
+            }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
@@ -76,7 +89,7 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
         if (location == null) {
             return List.of("", "", "");
         }
-        return propertyRepository.findShortAddressById(location.getId());
+        return propertyRepository.findShortAddressById(location.getId(), LocationNames.currentLang());
     }
 
     private Page<PropertyResponseDTO> toDtoPage(Page<Property> properties) {

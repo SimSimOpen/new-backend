@@ -11,6 +11,7 @@ import net.jemsit.product.mapper.LocationMapper;
 import net.jemsit.product.service.LocationService;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -24,16 +25,19 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public List<RegionsResponseDTO> getRegions() {
-        return regionRepository.findAll().stream().map(locationMapper::toRegionResponseDTO).toList();
+        return regionRepository.findAll().stream().map(locationMapper::toRegionResponseDTO)
+                .sorted(Comparator.comparing(RegionsResponseDTO::nameRu)).toList();
     }
 
     @Override
     public List<DistrictsResponseDTO> getDistrictsByRegionId(Long regionId) {
-        return districtRepository.findByRegionId(regionId).stream().map(locationMapper::toDistrictResponseDTO).toList();
+        return districtRepository.findByRegionId(regionId).stream().map(locationMapper::toDistrictResponseDTO)
+                .sorted(Comparator.comparing(DistrictsResponseDTO::nameRu)).toList();
     }
 
     @Override
     public List<PlacesResponseDTO> getPlacesByDistrictId(Long districtId) {
-        return placeRepository.findByDistrictId(districtId).stream().map(locationMapper::toPlaceResponseDTO).toList();
+        return placeRepository.findByDistrictId(districtId).stream().map(locationMapper::toPlaceResponseDTO)
+                .sorted(Comparator.comparing(PlacesResponseDTO::nameRu)).toList();
     }
 }

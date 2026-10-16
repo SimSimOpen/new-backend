@@ -15,21 +15,21 @@ import java.util.List;
 
 public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSpecificationExecutor<Property> {
     @Query(value = """
-            SELECT r.name_ru
+            SELECT CASE WHEN :lang = 'ru' THEN COALESCE(NULLIF(r.name_ru, ''), r.name_uz) ELSE COALESCE(NULLIF(r.name_uz, ''), r.name_ru) END
             FROM property_locations pl
             LEFT JOIN regions r ON r.id = pl.region_id
             WHERE pl.id = :locationId
 
             UNION ALL
 
-            SELECT d.name_ru
+            SELECT CASE WHEN :lang = 'ru' THEN COALESCE(NULLIF(d.name_ru, ''), d.name_uz) ELSE COALESCE(NULLIF(d.name_uz, ''), d.name_ru) END
             FROM property_locations pl
             LEFT JOIN districts d ON d.id = pl.district_id
             WHERE pl.id = :locationId
 
             UNION ALL
 
-            SELECT p.name_ru
+            SELECT CASE WHEN :lang = 'ru' THEN COALESCE(NULLIF(p.name_ru, ''), p.name_uz) ELSE COALESCE(NULLIF(p.name_uz, ''), p.name_ru) END
             FROM property_locations pl
             LEFT JOIN villages p ON p.id = pl.place_id
             WHERE pl.id = :locationId
@@ -39,7 +39,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             FROM property_locations pl
             WHERE pl.id = :locationId
             """, nativeQuery = true)
-    List<String> findShortAddressById(long locationId);
+    List<String> findShortAddressById(@Param("locationId") long locationId, @Param("lang") String lang);
 
     Page<Property> findByAgentID(Long id, Pageable pageable);
 
@@ -90,6 +90,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             AND (:offerType IS NULL OR p.offer_type = :offerType)
             AND (:occupancyStatus IS NULL OR p.occupancy_status = :occupancyStatus)
             AND (:agentID IS NULL OR p.agentID = :agentID)
+            AND (CAST(:regionId AS bigint) IS NULL OR l.region_id = :regionId)
+            AND (CAST(:districtId AS bigint) IS NULL OR l.district_id = :districtId)
+            AND (CAST(:placeId AS bigint) IS NULL OR l.place_id = :placeId)
         """, countQuery = """
         SELECT COUNT(p.id) FROM properties p
         JOIN property_locations l ON p.location_id = l.id
@@ -114,6 +117,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             AND (:offerType IS NULL OR p.offer_type = :offerType)
             AND (:occupancyStatus IS NULL OR p.occupancy_status = :occupancyStatus)
             AND (:agentID IS NULL OR p.agentID = :agentID)
+            AND (CAST(:regionId AS bigint) IS NULL OR l.region_id = :regionId)
+            AND (CAST(:districtId AS bigint) IS NULL OR l.district_id = :districtId)
+            AND (CAST(:placeId AS bigint) IS NULL OR l.place_id = :placeId)
         """, nativeQuery = true)
     Page<Property> search(
             @Param("agentID") Long agentID,
@@ -123,6 +129,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             @Param("category") String category,
             @Param("offerType") String offerType,
             @Param("occupancyStatus") String occupancyStatus,
+            @Param("regionId") Long regionId,
+            @Param("districtId") Long districtId,
+            @Param("placeId") Long placeId,
             Pageable pageable
     );
 
