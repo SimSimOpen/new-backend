@@ -25,6 +25,8 @@ public record PropertyRequestDTO(
         String ownerContact,
         String agent,
         Long agentID,
-        PropertyLocation location
+        PropertyLocation location,
+        Double latitude,
+        Double longitude
         ) {
 }
