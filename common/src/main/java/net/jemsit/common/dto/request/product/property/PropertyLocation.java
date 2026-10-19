@@ -8,6 +8,8 @@ public record PropertyLocation (
          @JsonProperty("region_id") Long regionID,
          @JsonProperty("district_id") Long districtID,
          @JsonProperty("place_id")  Long placeID,
-         String address
+         String address,
+         Double latitude,
+         Double longitude
 ) {
 }

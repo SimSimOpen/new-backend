@@ -30,6 +30,8 @@ public record PropertyResponseDTO(
         String agent,
         Long agentID,
         List<String> location, //{place-name, district-name, region-name, address} only in Uzbekistan
+        Double latitude,
+        Double longitude,
         List<PropertyMedia> medias,
         PropertyAmenities amenities,
         LocalDateTime createdAt,

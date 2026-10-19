@@ -276,6 +276,8 @@ public class PropertyServiceImpl implements PropertyService {
         location.setDistrictID(source.districtID());
         location.setMapLocation(source.mapLocation());
         location.setPlaceID(source.placeID());
+        location.setLatitude(source.latitude());
+        location.setLongitude(source.longitude());
         return location;
     }
 

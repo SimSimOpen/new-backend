@@ -29,11 +29,15 @@ public abstract class PropertyMapper {
 
     @Mapping(target = "medias", expression = "java(mapMedia(property.getMedias()))")
     @Mapping(target = "location", ignore = true)
+    @Mapping(target = "latitude", source = "location.latitude")
+    @Mapping(target = "longitude", source = "location.longitude")
     public abstract PropertyResponseDTO toDto(Property property);
 
     @Mapping(target = "medias", expression = "java(mapMedia(property.getMedias()))")
     @Mapping(target = "location", source = "shortAddress")
     @Mapping(target = "amenities", source = "property.amenities")
+    @Mapping(target = "latitude", source = "property.location.latitude")
+    @Mapping(target = "longitude", source = "property.location.longitude")
     public abstract PropertyResponseDTO toDtoWithShortAddress(Property property, List<String> shortAddress);
 
     public List<PropertyMedia> mapMedia(List<PropertyMediaData> media) {

@@ -21,4 +21,10 @@ public class PropertyLocation {
     @Column(name = "place_id")
     private Long placeID;
     private String address;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
 }
