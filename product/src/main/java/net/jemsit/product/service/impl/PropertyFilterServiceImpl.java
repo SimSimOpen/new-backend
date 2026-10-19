@@ -89,7 +89,11 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
         if (location == null) {
             return List.of("", "", "");
         }
-        return propertyRepository.findShortAddressById(location.getId(), LocationNames.currentLang());
+        // Refs cleared by a dataset migration resolve to null; keep the slots so the address stays
+        // at index 3, but hand clients blanks rather than nulls they would render as "null".
+        return propertyRepository.findShortAddressById(location.getId(), LocationNames.currentLang()).stream()
+                .map(part -> part == null ? "" : part)
+                .toList();
     }
 
     private Page<PropertyResponseDTO> toDtoPage(Page<Property> properties) {

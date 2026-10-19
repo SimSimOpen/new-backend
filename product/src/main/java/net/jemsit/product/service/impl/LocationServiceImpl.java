@@ -37,7 +37,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public List<PlacesResponseDTO> getPlacesByDistrictId(Long districtId) {
-        return placeRepository.findByDistrictId(districtId).stream().map(locationMapper::toPlaceResponseDTO)
-                .sorted(Comparator.comparing(PlacesResponseDTO::nameRu)).toList();
+        return placeRepository.findByDistrictIdOrderByIdAsc(districtId).stream()
+                .map(locationMapper::toPlaceResponseDTO).toList();
     }
 }

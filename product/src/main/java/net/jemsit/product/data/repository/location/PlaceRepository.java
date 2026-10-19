@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface PlaceRepository extends JpaRepository<Place, Long> {
-    List<Place> findByDistrictId(Long districtId);
+    // Ids follow the quarter sequence within a district; sorting names puts "10-й квартал" before "2-й".
+    List<Place> findByDistrictIdOrderByIdAsc(Long districtId);
 }
