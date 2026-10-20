@@ -29,7 +29,7 @@ public record PropertyResponseDTO(
         String ownerContact,
         String agent,
         Long agentID,
-        List<String> location, //{place-name, district-name, region-name, address} only in Uzbekistan
+        List<String> location, //{region-name, district-name, place-name, address} in the request language
         Double latitude,
         Double longitude,
         List<PropertyMedia> medias,
