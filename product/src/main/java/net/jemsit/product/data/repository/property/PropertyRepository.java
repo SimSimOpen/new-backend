@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSpecificationExecutor<Property> {
@@ -72,6 +73,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
         LEFT JOIN regions r ON r.id = l.region_id
         LEFT JOIN districts d ON d.id = l.district_id
         LEFT JOIN villages v ON v.id = l.place_id
+        LEFT JOIN property_amenities am ON am.id = p.amenities_id
         WHERE
             to_tsvector('simple',
                 COALESCE(p.title, '') || ' ' ||
@@ -93,12 +95,27 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             AND (CAST(:regionId AS bigint) IS NULL OR l.region_id = :regionId)
             AND (CAST(:districtId AS bigint) IS NULL OR l.district_id = :districtId)
             AND (CAST(:placeId AS bigint) IS NULL OR l.place_id = :placeId)
+            AND (:typeFilter IS NULL OR p.type = ANY (string_to_array(:typeFilter, ',')))
+            AND (CAST(:priceFrom AS numeric) IS NULL OR p.price >= :priceFrom)
+            AND (CAST(:priceTo AS numeric) IS NULL OR p.price <= :priceTo)
+            AND (CAST(:roomsFrom AS integer) IS NULL OR p.number_of_rooms >= :roomsFrom)
+            AND (CAST(:floorFrom AS integer) IS NULL OR p.floor >= :floorFrom)
+            AND (CAST(:amenityParking AS boolean) IS NULL OR am.has_parking = true)
+            AND (CAST(:amenitySwimmingPool AS boolean) IS NULL OR am.has_swimming_pool = true)
+            AND (CAST(:amenityGym AS boolean) IS NULL OR am.has_gym = true)
+            AND (CAST(:amenityAirConditioning AS boolean) IS NULL OR am.has_air_conditioning = true)
+            AND (CAST(:amenityWashingMachine AS boolean) IS NULL OR am.has_washing_machine = true)
+        ORDER BY
+            CASE WHEN :sortBy = 'price_asc' THEN p.price END ASC NULLS LAST,
+            CASE WHEN :sortBy = 'price_desc' THEN p.price END DESC NULLS LAST,
+            CASE WHEN :sortBy = 'created_desc' THEN p.created_at END DESC NULLS LAST
         """, countQuery = """
         SELECT COUNT(p.id) FROM properties p
         JOIN property_locations l ON p.location_id = l.id
         LEFT JOIN regions r ON r.id = l.region_id
         LEFT JOIN districts d ON d.id = l.district_id
         LEFT JOIN villages v ON v.id = l.place_id
+        LEFT JOIN property_amenities am ON am.id = p.amenities_id
         WHERE
             to_tsvector('simple',
                 COALESCE(p.title, '') || ' ' ||
@@ -120,6 +137,16 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             AND (CAST(:regionId AS bigint) IS NULL OR l.region_id = :regionId)
             AND (CAST(:districtId AS bigint) IS NULL OR l.district_id = :districtId)
             AND (CAST(:placeId AS bigint) IS NULL OR l.place_id = :placeId)
+            AND (:typeFilter IS NULL OR p.type = ANY (string_to_array(:typeFilter, ',')))
+            AND (CAST(:priceFrom AS numeric) IS NULL OR p.price >= :priceFrom)
+            AND (CAST(:priceTo AS numeric) IS NULL OR p.price <= :priceTo)
+            AND (CAST(:roomsFrom AS integer) IS NULL OR p.number_of_rooms >= :roomsFrom)
+            AND (CAST(:floorFrom AS integer) IS NULL OR p.floor >= :floorFrom)
+            AND (CAST(:amenityParking AS boolean) IS NULL OR am.has_parking = true)
+            AND (CAST(:amenitySwimmingPool AS boolean) IS NULL OR am.has_swimming_pool = true)
+            AND (CAST(:amenityGym AS boolean) IS NULL OR am.has_gym = true)
+            AND (CAST(:amenityAirConditioning AS boolean) IS NULL OR am.has_air_conditioning = true)
+            AND (CAST(:amenityWashingMachine AS boolean) IS NULL OR am.has_washing_machine = true)
         """, nativeQuery = true)
     Page<Property> search(
             @Param("agentID") Long agentID,
@@ -132,6 +159,17 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             @Param("regionId") Long regionId,
             @Param("districtId") Long districtId,
             @Param("placeId") Long placeId,
+            @Param("typeFilter") String typeFilter,
+            @Param("priceFrom") BigDecimal priceFrom,
+            @Param("priceTo") BigDecimal priceTo,
+            @Param("roomsFrom") Integer roomsFrom,
+            @Param("floorFrom") Integer floorFrom,
+            @Param("amenityParking") Boolean amenityParking,
+            @Param("amenitySwimmingPool") Boolean amenitySwimmingPool,
+            @Param("amenityGym") Boolean amenityGym,
+            @Param("amenityAirConditioning") Boolean amenityAirConditioning,
+            @Param("amenityWashingMachine") Boolean amenityWashingMachine,
+            @Param("sortBy") String sortBy,
             Pageable pageable
     );
 

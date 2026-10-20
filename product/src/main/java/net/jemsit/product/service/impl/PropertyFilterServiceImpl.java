@@ -1,9 +1,11 @@
 package net.jemsit.product.service.impl;
 
+import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.data.enums.Roles;
+import net.jemsit.common.data.enums.property.PropertyType;
 import net.jemsit.common.dto.request.product.property.PropertyFilterRequestDTO;
 import net.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
 import net.jemsit.product.data.model.property.Property;
@@ -13,7 +15,9 @@ import net.jemsit.product.mapper.LocationNames;
 import net.jemsit.product.mapper.PropertyMapper;
 import net.jemsit.product.service.PropertyFilterService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +34,8 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
     @Override
     public Page<PropertyResponseDTO> filterProperties(PropertyFilterRequestDTO filterRequest, Pageable pageable) {
         Long agentScope = agentScopedId();
+        List<PropertyType> types = filterRequest.types() == null ? List.of() : filterRequest.types();
+        List<String> amenities = filterRequest.amenities() == null ? List.of() : filterRequest.amenities();
 
         if (filterRequest.search() != null && !filterRequest.search().isBlank()) {
             Page<Property> result = propertyRepository.search(
@@ -43,7 +49,18 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
                     filterRequest.regionId(),
                     filterRequest.districtId(),
                     filterRequest.placeId(),
-                    pageable
+                    typeFilterOf(types),
+                    filterRequest.priceFrom(),
+                    filterRequest.priceTo(),
+                    filterRequest.roomsFrom(),
+                    filterRequest.floorFrom(),
+                    amenityFlag(amenities, "parking"),
+                    amenityFlag(amenities, "swimmingPool"),
+                    amenityFlag(amenities, "gym"),
+                    amenityFlag(amenities, "airConditioning"),
+                    amenityFlag(amenities, "washingMachine"),
+                    nativeSortKey(pageable.getSort()),
+                    PageRequest.of(pageable.getPageNumber(), pageable.getPageSize())
             );
             return toDtoPage(result);
         }
@@ -59,6 +76,9 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
             }
             if (filterRequest.type() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("type"), filterRequest.type()));
+            }
+            if (!types.isEmpty()) {
+                predicates.add(root.get("type").in(types));
             }
             if (filterRequest.offerType() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("offerType"), filterRequest.offerType()));
@@ -77,6 +97,27 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
             }
             if (filterRequest.placeId() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("location").get("placeID"), filterRequest.placeId()));
+            }
+            if (filterRequest.priceFrom() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), filterRequest.priceFrom()));
+            }
+            if (filterRequest.priceTo() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), filterRequest.priceTo()));
+            }
+            if (filterRequest.roomsFrom() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("numberOfRooms"), filterRequest.roomsFrom()));
+            }
+            if (filterRequest.floorFrom() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("floor"), filterRequest.floorFrom()));
+            }
+            if (!amenities.isEmpty()) {
+                var amenitiesJoin = root.join("amenities", JoinType.INNER);
+                for (String amenity : amenities) {
+                    String attribute = amenityAttribute(amenity);
+                    if (attribute != null) {
+                        predicates.add(criteriaBuilder.isTrue(amenitiesJoin.get(attribute)));
+                    }
+                }
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
@@ -103,6 +144,47 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
 
     private static String nameOf(Enum<?> value) {
         return value == null ? null : value.name();
+    }
+
+    /** Translates the requested sort into the key the native query's CASE ORDER BY understands. */
+    private static String nativeSortKey(Sort sort) {
+        return sort.stream().findFirst().map(order -> {
+            if ("price".equals(order.getProperty())) {
+                return order.isAscending() ? "price_asc" : "price_desc";
+            }
+            return "createdAt".equals(order.getProperty()) && order.isDescending() ? "created_desc" : null;
+        }).orElse(null);
+    }
+
+    private static String typeFilterOf(List<PropertyType> types) {
+        return types.isEmpty() ? null : String.join(",", types.stream().map(Enum::name).toList());
+    }
+
+    private static Boolean amenityFlag(List<String> amenities, String key) {
+        return amenities.contains(key) ? Boolean.TRUE : null;
+    }
+
+    /** Maps a client amenity key to the entity flag; unknown keys are ignored, not an error. */
+    private static String amenityAttribute(String key) {
+        return switch (key) {
+            case "parking" -> "hasParking";
+            case "garden" -> "hasGarden";
+            case "swimmingPool" -> "hasSwimmingPool";
+            case "gym" -> "hasGym";
+            case "security" -> "hasSecurity";
+            case "elevator" -> "hasElevator";
+            case "washingMachine" -> "hasWashingMachine";
+            case "airConditioning" -> "hasAirConditioning";
+            case "internet" -> "hasInternet";
+            case "refrigerator" -> "hasRefrigerator";
+            case "dishwasher" -> "hasDishwasher";
+            case "microwave" -> "hasMicrowave";
+            case "parkingSpace" -> "hasParkingSpace";
+            case "tv" -> "hasTV";
+            case "satellite" -> "hasSatellite";
+            case "furniture" -> "hasFurniture";
+            default -> null;
+        };
     }
 
     private static Long agentScopedId() {
