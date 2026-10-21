@@ -28,12 +28,27 @@ public class MediaServiceImpl implements MediaService {
     @Override
     public Long uploadMedia(Long propertyId, List<MultipartFile> files) {
         Long userId = UserContext.getUserId();
-
         if (propertyId == null) {
             propertyId = productApi.createPropertyDraft(userId).id();
         }
+        asyncMediaService.asyncProductMediaUpload(propertyId, readFiles(files), userId);
+        return propertyId;
+    }
 
-        List<FileData> fileDataList = files.stream()
+    @Override
+    public Long uploadCarMedia(Long carId, List<MultipartFile> files) {
+        Long userId = UserContext.getUserId();
+        if (carId == null) {
+            carId = productApi.createCarDraft(userId).id();
+        }
+        asyncMediaService.asyncCarMediaUpload(carId, readFiles(files), userId);
+        return carId;
+    }
+
+    // Bytes are read here, on the request thread: the multipart temp files are gone by the time the
+    // async upload runs.
+    private static List<FileData> readFiles(List<MultipartFile> files) {
+        return files.stream()
                 .map(file -> {
                     try {
                         return new FileData(file.getBytes(), file.getOriginalFilename());
@@ -44,9 +59,6 @@ public class MediaServiceImpl implements MediaService {
                 })
                 .filter(Objects::nonNull)
                 .toList();
-
-        asyncMediaService.asyncProductMediaUpload(propertyId, fileDataList, userId);
-        return propertyId;
     }
 
     @Override

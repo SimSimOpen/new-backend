@@ -7,6 +7,8 @@ import java.util.List;
 public interface MediaService {
     Long uploadMedia(Long propertyId, List<MultipartFile> files);
 
+    Long uploadCarMedia(Long carId, List<MultipartFile> files);
+
     void deleteMedia(String mediaUrl);
 
     Long uploadUserAvatar(Long userId, MultipartFile file);
