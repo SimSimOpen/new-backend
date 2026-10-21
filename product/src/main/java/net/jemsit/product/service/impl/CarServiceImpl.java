@@ -69,7 +69,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public CarResponseDTO getById(Long id) {
-        return toDto(requireCar(id));
+        return toDto(requireVisibleCar(id));
     }
 
     @Override
@@ -83,6 +83,13 @@ public class CarServiceImpl implements CarService {
         return "Car with id " + id + " has been deleted successfully.";
     }
 
+    @Override
+    public void requireEditable(Long id) {
+        requireOwnedCar(id);
+    }
+
+    // Called back from the async media upload, where UserContext is empty; ownership was checked on
+    // the request thread through requireEditable before the upload was queued.
     @Override
     @Transactional
     public CarResponseDTO addImages(AddPropertyImagesRequestDTO request, Long userId) {
@@ -118,7 +125,7 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Integer getMediaCount(Long carId) {
-        return requireCar(carId).getMedias().size();
+        return requireVisibleCar(carId).getMedias().size();
     }
 
     @Override
@@ -219,10 +226,23 @@ public class CarServiceImpl implements CarService {
                 .orElseThrow(() -> new UserException("Car not found with id: " + id));
     }
 
+    /** Live cars are public; drafts and archived ones only to their agent or an admin. */
+    private Car requireVisibleCar(Long id) {
+        Car car = requireCar(id);
+        if (car.getListingStatus() != ListingStatus.ACTIVE && !canEdit(car)) {
+            throw new UserException("Car not found with id: " + id);
+        }
+        return car;
+    }
+
+    private static boolean canEdit(Car car) {
+        return hasRole(Roles.ADMIN) || Objects.equals(car.getAgentID(), UserContext.getUserId());
+    }
+
     /** Only the agent who listed the car, or an admin, may change or remove it. */
     private Car requireOwnedCar(Long id) {
         Car car = requireCar(id);
-        if (!hasRole(Roles.ADMIN) && !Objects.equals(car.getAgentID(), UserContext.getUserId())) {
+        if (!canEdit(car)) {
             throw new UserException("You are not allowed to modify car with id: " + id);
         }
         return car;

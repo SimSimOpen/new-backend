@@ -40,6 +40,9 @@ public class MediaServiceImpl implements MediaService {
         Long userId = UserContext.getUserId();
         if (carId == null) {
             carId = productApi.createCarDraft(userId).id();
+        } else {
+            // Checked here, on the request thread: the async upload has no user context.
+            productApi.requireCarEditable(carId);
         }
         asyncMediaService.asyncCarMediaUpload(carId, readFiles(files), userId);
         return carId;

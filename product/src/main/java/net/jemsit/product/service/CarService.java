@@ -17,6 +17,8 @@ public interface CarService {
 
     String deleteById(Long id);
 
+    void requireEditable(Long id);
+
     CarResponseDTO addImages(AddPropertyImagesRequestDTO request, Long userId);
 
     void deleteImage(Long id, Long userId);

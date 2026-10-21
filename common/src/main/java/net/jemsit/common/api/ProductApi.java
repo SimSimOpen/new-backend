@@ -12,5 +12,8 @@ public interface ProductApi {
 
     CarResponseDTO createCarDraft(Long userId);
 
+    /** Throws unless the current user owns the car or is an admin. */
+    void requireCarEditable(Long carId);
+
     CarResponseDTO addCarImage(AddPropertyImagesRequestDTO request, Long userId);
 }

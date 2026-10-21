@@ -32,6 +32,11 @@ public class ProductApiImpl implements ProductApi {
     }
 
     @Override
+    public void requireCarEditable(Long carId) {
+        carService.requireEditable(carId);
+    }
+
+    @Override
     public CarResponseDTO addCarImage(AddPropertyImagesRequestDTO request, Long userId) {
         return carService.addImages(request, userId);
     }
