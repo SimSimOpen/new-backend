@@ -22,6 +22,11 @@ public class ProductApiImpl implements ProductApi {
     }
 
     @Override
+    public void requirePropertyEditable(Long propertyId) {
+        propertyService.requireEditable(propertyId);
+    }
+
+    @Override
     public PropertyResponseDTO addPropertyImage(AddPropertyImagesRequestDTO request, Long userId) {
         return propertyService.addPropertyImage(request, userId);
     }

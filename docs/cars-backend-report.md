@@ -63,15 +63,22 @@ Backend запускался локально на временных Postgres, 
 
 Ограничение: ошибки прав возвращаются со статусом **400** (так в проекте работает `UserException`), а не 403.
 
-## Похожие дыры в недвижимости (НЕ исправлены, нужно решение)
+## Дыры в недвижимости — исправлено
 
-Найдены чтением кода. Живьём на недвижимости я их не воспроизводил.
+Исправлено в `batyr/dev` по образцу машин и проверено живьём (второй агент на чужих объявлениях):
 
-1. **Аноним видит черновики.** `GET /property/filter` публичный, а `listingStatus` берётся из запроса как есть. Если параметр не передан, приходят все статусы, при `listingStatus=DRAFT` только черновики. `PropertyFilterServiceImpl.filterProperties`.
-2. **Нет проверки владельца.** `PUT /property/update/{id}`, `update-draft/{id}`, `DELETE /property/{id}`, `DELETE /property/delete/image/{id}` доступны любому залогиненному пользователю для любого объявления. `PropertyServiceImpl.update / deleteById / deletePropertyImage`.
-3. **Загрузка фото в чужое объявление** через `upload-product-media?property_id=`, без проверки.
-4. **Чужие черновики по id:** `GET /property/{id}` и `property-media-count/{id}`.
-5. **Баг:** `ownerContact` в ответах по недвижимости всегда `null`. В `PropertyMapper` поле не замаплено (`ownerOrAgentContact` → `ownerContact`), MapStruct об этом предупреждает при сборке.
-6. **Секрет в git:** в `src/main/resources/application.properties` токен Telegram-бота записан значением по умолчанию. Токен стоит перевыпустить у BotFather и брать только из env.
+1. **Черновики для анонима.** `GET /property/filter` (обе ветки: с `search` и без) отдаёт публике
+   только `ACTIVE`; агент видит свои объявления в любом статусе, админ все. `GET /property/all`
+   для не-админа теперь возвращает только свои объявления.
+2. **Изменение и удаление чужого.** `update/{id}`, `update-draft/{id}`, `DELETE /{id}`,
+   `delete/image/{id}` разрешены только владельцу или админу.
+3. **Фото в чужое объявление.** `upload-product-media?property_id=` проверяет права синхронно,
+   до async-загрузки.
+4. **Чужие черновики по id.** `GET /property/{id}` и `property-media-count/{id}` отдают черновик
+   или архив только владельцу или админу.
+5. **`ownerContact` всегда null.** `PropertyMapper` теперь маппит `ownerOrAgentContact` ↔ `ownerContact`
+   в обе стороны.
 
-Все пункты 1–4 закрываются так же, как в машинах. Могу сделать отдельным коммитом.
+Остаётся (нужен человек с доступом): **токен Telegram-бота** в `src/main/resources/application.properties`
+записан значением по умолчанию и лежит в git. Его нужно перевыпустить у BotFather и брать только
+из переменной окружения.

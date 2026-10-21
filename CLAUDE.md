@@ -54,7 +54,7 @@ Follow the cars implementation (`CarServiceImpl`):
 - only the owning agent or an admin may update, delete or add/remove photos;
 - ownership for uploads is checked on the request thread, before the async upload is queued
   (`UserContext` is empty on async threads).
-Real estate does not follow all of these yet — see `docs/cars-backend-report.md`.
+Real estate (`PropertyServiceImpl`, `PropertyFilterServiceImpl`) follows the same rules.
 
 ## Docs
 - `docs/cars-backend-report.md` — cars category: API, security fixes, open issues in real estate.

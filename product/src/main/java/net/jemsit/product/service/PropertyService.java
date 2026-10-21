@@ -18,6 +18,9 @@ public interface PropertyService {
 
     String deleteById(Long id);
 
+    /** Throws unless the current user owns the property or is an admin. */
+    void requireEditable(Long id);
+
     PropertyResponseDTO addPropertyImage(AddPropertyImagesRequestDTO request, Long userId);
 
     PropertyResponseDTO createPropertyDraft(Long userId);
