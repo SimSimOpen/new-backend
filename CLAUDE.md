@@ -4,10 +4,11 @@ Spring Boot 4.1 / Java 21 modular monolith for the SimSim marketplace (api.simsi
 Frontends live in separate repos: `sim-sim-client` (public site) and `sim-sim-realtor` (agent/admin panel).
 
 ## Workflow — read first
-- **Pushing to `main` deploys to production.** CI builds, pushes the image to GHCR and redeploys
-  the VPS (`.github/workflows/main.yml`). Never push or merge to `main` directly; work on a
-  personal branch (e.g. `batyr/dev`) and open a PR.
-- CI runs `./gradlew clean build`; it must pass before merging.
+- Work on a personal branch (e.g. `batyr/dev`) and open a PR into `main`.
+- CI on PR/`main` runs `./gradlew clean build`; it must pass before merging.
+- **Deploy happens only on a `v*` tag** (`.github/workflows/main.yml`): the tag builds the image,
+  pushes it to GHCR (`latest`, the tag name, `sha-…`) and redeploys the VPS. Pushes to `main` only
+  build.
 - Schema changes go through Hibernate `ddl-auto=update`: new tables/columns appear on boot, but
   nothing is ever dropped or renamed, and seeders never rewrite existing rows. Note any manual SQL a
   deploy needs in the PR description.
