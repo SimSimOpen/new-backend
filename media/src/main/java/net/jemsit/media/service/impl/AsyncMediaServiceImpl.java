@@ -28,6 +28,7 @@ import java.util.concurrent.Semaphore;
 public class AsyncMediaServiceImpl implements AsyncMediaService {
 
     private static final String PROPERTIES_BASE_PATH = "properties/";
+    private static final String CARS_BASE_PATH = "cars/";
     private static final String USER_AVATARS_BASE_PATH = "user-avatars/";
     private static final String PRODUCT_BUCKET_NAME = "real-estate-media";
     private static final String USER_BUCKET_NAME = "user-media";
@@ -41,21 +42,35 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
     @Override
     @Async
     public void asyncProductMediaUpload(Long propertyId, List<FileData> files, Long userId) {
-        try {
-            List<String> urls = processFilesWithBoundedConcurrency(propertyId, files);
-
-            if (urls.isEmpty()) {
-                log.error("All file uploads failed for property {}", propertyId);
-                return;
-            }
-            if (urls.size() < files.size()) {
-                log.warn("Partial upload for property {}: {}/{} files succeeded",
-                        propertyId, urls.size(), files.size());
-            }
-
+        List<String> urls = uploadListingMedia(PROPERTIES_BASE_PATH, propertyId, files);
+        if (!urls.isEmpty()) {
             productApi.addPropertyImage(new AddPropertyImagesRequestDTO(propertyId, urls), userId);
+        }
+    }
+
+    @Override
+    @Async
+    public void asyncCarMediaUpload(Long carId, List<FileData> files, Long userId) {
+        List<String> urls = uploadListingMedia(CARS_BASE_PATH, carId, files);
+        if (!urls.isEmpty()) {
+            productApi.addCarImage(new AddPropertyImagesRequestDTO(carId, urls), userId);
+        }
+    }
+
+    /** Uploads a listing's photos; returns the stored URLs, empty when nothing made it. */
+    private List<String> uploadListingMedia(String basePath, Long listingId, List<FileData> files) {
+        try {
+            List<String> urls = processFilesWithBoundedConcurrency(basePath, listingId, files);
+            if (urls.isEmpty()) {
+                log.error("All file uploads failed for {}{}", basePath, listingId);
+            } else if (urls.size() < files.size()) {
+                log.warn("Partial upload for {}{}: {}/{} files succeeded",
+                        basePath, listingId, urls.size(), files.size());
+            }
+            return urls;
         } catch (Exception e) {
-            log.error("Fatal error during media upload for property {}: {}", propertyId, e.getMessage(), e);
+            log.error("Fatal error during media upload for {}{}: {}", basePath, listingId, e.getMessage(), e);
+            return List.of();
         }
     }
 
@@ -70,11 +85,11 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
         }
     }
 
-    private List<String> processFilesWithBoundedConcurrency(Long propertyId, List<FileData> files) {
+    private List<String> processFilesWithBoundedConcurrency(String basePath, Long listingId, List<FileData> files) {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             List<CompletableFuture<String>> futures = files.stream()
                     .map(file -> CompletableFuture.supplyAsync(
-                            () -> processWithSemaphore(file, propertyId), executor))
+                            () -> processWithSemaphore(basePath, file, listingId), executor))
                     .toList();
 
             return futures.stream()
@@ -88,12 +103,12 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
         }
     }
 
-    private String processWithSemaphore(FileData file, Long propertyId) {
+    private String processWithSemaphore(String basePath, FileData file, Long listingId) {
         try {
             ffmpegSemaphore.acquire();
             try {
-                return processAndUpload(PROPERTIES_BASE_PATH, PRODUCT_BUCKET_NAME,
-                        file.bytes(), file.originalFileName(), propertyId);
+                return processAndUpload(basePath, PRODUCT_BUCKET_NAME,
+                        file.bytes(), file.originalFileName(), listingId);
             } finally {
                 ffmpegSemaphore.release();
             }

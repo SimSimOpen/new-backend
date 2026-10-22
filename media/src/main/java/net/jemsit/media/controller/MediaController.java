@@ -24,6 +24,12 @@ public class MediaController {
         return ResponseEntity.ok(mediaService.uploadMedia(propertyId, files));
     }
 
+    @PostMapping(value = "/upload-car-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadCarMedia(@RequestParam(value = "car_id", required = false) Long carId,
+                                            @RequestPart("files") List<MultipartFile> files) {
+        return ResponseEntity.ok(mediaService.uploadCarMedia(carId, files));
+    }
+
     @PostMapping(value = "/upload-user-avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadUserAvatar(@RequestParam("user_id") Long userId,
                                               @RequestPart("file") MultipartFile file) {

@@ -14,7 +14,7 @@
     "tagline": "Cars, motorcycles & parts",
     "description": "Find new and used vehicles, spare parts and accessories from dealers and owners.",
     "imageUrl": "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=900&q=80",
-    "available": false,
+    "available": true,
     "sortOrder": 2
   },
   {
