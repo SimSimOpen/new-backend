@@ -33,10 +33,13 @@ public interface OperatorFeedApi {
      * A listing was viewed. Called on every view; whether this count is worth telling the operator
      * about is the implementation's decision, not the caller's.
      *
+     * @param kind the listing family ("property", "car"); the tables number their rows independently,
+     *        so the kind keeps one listing's notification tag from colliding with another family's
+     * @param listingId the viewed listing's id
      * @param views the count after the increment
      * @param title looked up by the caller, which owns the repository; may be null
      */
-    void viewMilestone(Long propertyId, long views, String title);
+    void viewMilestone(String kind, Long listingId, long views, String title);
 
     /**
      * Whether {@link #viewMilestone} would produce a card for this count. Exists so the caller can skip

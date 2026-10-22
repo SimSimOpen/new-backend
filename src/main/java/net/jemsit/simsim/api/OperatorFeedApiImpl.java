@@ -74,13 +74,14 @@ public class OperatorFeedApiImpl implements OperatorFeedApi {
     }
 
     @Override
-    public void viewMilestone(Long propertyId, long views, String title) {
+    public void viewMilestone(String kind, Long listingId, long views, String title) {
         if (!isViewMilestone(views)) {
             return;
         }
-        publish(listingName(propertyId, title) + " - " + views + (views == 1L ? " view" : " views"),
+        String family = kind != null && !kind.isBlank() ? kind.trim().toLowerCase() + "-" : "";
+        publish(listingName(listingId, title) + " - " + views + (views == 1L ? " view" : " views"),
                 views == 1L ? "First view" : "Passed " + views + " views",
-                "views-" + propertyId,
+                "views-" + family + listingId,
                 "low");
     }
 
