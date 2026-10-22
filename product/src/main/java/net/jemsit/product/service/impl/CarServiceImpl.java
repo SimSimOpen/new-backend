@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.api.AuthApi;
 import net.jemsit.common.api.MediaApi;
+import net.jemsit.common.api.OperatorFeedApi;
 import net.jemsit.common.data.enums.EventMessages;
 import net.jemsit.common.data.enums.Roles;
 import net.jemsit.common.data.enums.property.ListingStatus;
@@ -46,6 +47,7 @@ public class CarServiceImpl implements CarService {
     @Lazy
     private final MediaApi mediaApi;
     private final AuthApi authApi;
+    private final OperatorFeedApi operatorFeedApi;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -209,7 +211,34 @@ public class CarServiceImpl implements CarService {
             throw new UserException("Car not found with id: " + id);
         }
         carRepository.incrementViewCount(id);
-        return carRepository.findViewCountById(id);
+        long views = carRepository.findViewCountById(id);
+        // Predicate first: most views are not milestones, and this is a public, unauthenticated route
+        // that should not pay for a name lookup it will throw away.
+        if (operatorFeedApi.isViewMilestone(views)) {
+            operatorFeedApi.viewMilestone("car", id, views, displayName(id));
+        }
+        return views;
+    }
+
+    /** Brand and model when present, else the free-text title; null when the row carries neither. */
+    private String displayName(Long id) {
+        Object[] parts = carRepository.findNamePartsById(id);
+        if (parts == null) {
+            return null;
+        }
+        StringBuilder name = new StringBuilder();
+        for (Object part : new Object[] { parts[0], parts[1] }) {
+            if (part != null && !part.toString().isBlank()) {
+                if (!name.isEmpty()) {
+                    name.append(' ');
+                }
+                name.append(part.toString().trim());
+            }
+        }
+        if (!name.isEmpty()) {
+            return name.toString();
+        }
+        return parts[2] != null && !parts[2].toString().isBlank() ? parts[2].toString().trim() : null;
     }
 
     private CarResponseDTO toDto(Car car) {

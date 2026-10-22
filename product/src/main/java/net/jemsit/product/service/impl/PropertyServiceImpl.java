@@ -237,7 +237,7 @@ public class PropertyServiceImpl implements PropertyService {
         // Predicate first: most views are not milestones, and this is a public, unauthenticated route
         // that should not pay for a title lookup it will throw away.
         if (operatorFeedApi.isViewMilestone(views)) {
-            operatorFeedApi.viewMilestone(id, views, propertyRepository.findTitleById(id));
+            operatorFeedApi.viewMilestone("property", id, views, propertyRepository.findTitleById(id));
         }
         return views;
     }

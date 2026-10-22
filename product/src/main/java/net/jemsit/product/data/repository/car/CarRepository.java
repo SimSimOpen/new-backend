@@ -52,4 +52,10 @@ public interface CarRepository extends JpaRepository<Car, Long>, JpaSpecificatio
 
     @Query("SELECT c.viewCount FROM Car c WHERE c.id = :id")
     long findViewCountById(@Param("id") Long id);
+
+    // Scalar projection, not findById: this is called from the public, unauthenticated view counter,
+    // which only needs a name for the operator card. A car's name is its brand and model; the
+    // free-text title is the fallback for rows that carry neither.
+    @Query("SELECT c.brand, c.model, c.title FROM Car c WHERE c.id = :id")
+    Object[] findNamePartsById(@Param("id") Long id);
 }
