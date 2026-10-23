@@ -28,6 +28,7 @@ public abstract class PropertyMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "agentID", ignore = true)
     @Mapping(target = "agent", ignore = true)
+    @Mapping(target = "ownerOrAgentContact", source = "ownerContact")
     public abstract Property toEntity(PropertyRequestDTO resident);
 
     // The response DTO exposes coordinates flat, and clients echo that shape back, so the generated
@@ -54,6 +55,7 @@ public abstract class PropertyMapper {
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "latitude", source = "location.latitude")
     @Mapping(target = "longitude", source = "location.longitude")
+    @Mapping(target = "ownerContact", source = "ownerOrAgentContact")
     public abstract PropertyResponseDTO toDto(Property property);
 
     @Mapping(target = "medias", expression = "java(mapMedia(property.getMedias()))")
@@ -61,6 +63,7 @@ public abstract class PropertyMapper {
     @Mapping(target = "amenities", source = "property.amenities")
     @Mapping(target = "latitude", source = "property.location.latitude")
     @Mapping(target = "longitude", source = "property.location.longitude")
+    @Mapping(target = "ownerContact", source = "property.ownerOrAgentContact")
     public abstract PropertyResponseDTO toDtoWithShortAddress(Property property, List<String> shortAddress);
 
     public List<PropertyMedia> mapMedia(List<PropertyMediaData> media) {

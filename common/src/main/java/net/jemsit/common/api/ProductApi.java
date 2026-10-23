@@ -8,6 +8,9 @@ public interface ProductApi {
 
     PropertyResponseDTO createPropertyDraft(Long userId);
 
+    /** Throws unless the current user owns the property or is an admin. */
+    void requirePropertyEditable(Long propertyId);
+
     PropertyResponseDTO addPropertyImage(AddPropertyImagesRequestDTO request, Long userId);
 
     CarResponseDTO createCarDraft(Long userId);

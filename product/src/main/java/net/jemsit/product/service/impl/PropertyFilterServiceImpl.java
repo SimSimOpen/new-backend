@@ -5,6 +5,7 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.data.enums.Roles;
+import net.jemsit.common.data.enums.property.ListingStatus;
 import net.jemsit.common.data.enums.property.PropertyType;
 import net.jemsit.common.dto.request.product.property.PropertyFilterRequestDTO;
 import net.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
@@ -34,6 +35,11 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
     @Override
     public Page<PropertyResponseDTO> filterProperties(PropertyFilterRequestDTO filterRequest, Pageable pageable) {
         Long agentScope = agentScopedId();
+        // Agents see their own listings in any status, admins see everything, and the public
+        // (anonymous or client) only ever sees live listings whatever status it asks for.
+        ListingStatus status = agentScope != null || hasRole(Roles.ADMIN)
+                ? filterRequest.listingStatus()
+                : ListingStatus.ACTIVE;
         List<PropertyType> types = filterRequest.types() == null ? List.of() : filterRequest.types();
         List<String> amenities = filterRequest.amenities() == null ? List.of() : filterRequest.amenities();
 
@@ -41,7 +47,7 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
             Page<Property> result = propertyRepository.search(
                     agentScope,
                     filterRequest.search(),
-                    nameOf(filterRequest.listingStatus()),
+                    nameOf(status),
                     nameOf(filterRequest.type()),
                     nameOf(filterRequest.category()),
                     nameOf(filterRequest.offerType()),
@@ -83,8 +89,8 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
             if (filterRequest.offerType() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("offerType"), filterRequest.offerType()));
             }
-            if (filterRequest.listingStatus() != null) {
-                predicates.add(criteriaBuilder.equal(root.get("listingStatus"), filterRequest.listingStatus()));
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("listingStatus"), status));
             }
             if (filterRequest.occupancyStatus() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("occupancyStatus"), filterRequest.occupancyStatus()));
@@ -188,8 +194,11 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
     }
 
     private static Long agentScopedId() {
+        return hasRole(Roles.AGENT) ? UserContext.getUserId() : null;
+    }
+
+    private static boolean hasRole(Roles role) {
         List<Roles> roles = UserContext.getRoles();
-        boolean isAgent = roles != null && roles.contains(Roles.AGENT);
-        return isAgent ? UserContext.getUserId() : null;
+        return roles != null && roles.contains(role);
     }
 }

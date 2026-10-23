@@ -31,6 +31,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -63,7 +65,7 @@ public class PropertyServiceImpl implements PropertyService {
     @Override
     @Transactional
     public PropertyResponseDTO update(Long id, PropertyRequestDTO request) {
-        Property toUpdate = requireProperty(id);
+        Property toUpdate = requireOwnedProperty(id);
         // Read before the DTO is applied: both PUT /property/update/{id} and /property/update-draft/{id}
         // funnel through here, and only the transition into ACTIVE should be announced, not every save.
         boolean wasActive = toUpdate.getListingStatus() == ListingStatus.ACTIVE;
@@ -132,18 +134,19 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public Page<PropertyResponseDTO> getAll(Pageable pageable) {
-        return toDtoPage(propertyRepository.findAll(pageable));
+        // Every status is listed here, so outside of admins it is limited to the caller's own listings.
+        return getAgentsAllProperties(pageable);
     }
 
     @Override
     public PropertyResponseDTO getById(Long id) {
-        return propertyMapper.toDto(requireProperty(id));
+        return propertyMapper.toDto(requireVisibleProperty(id));
     }
 
     @Override
     @Transactional
     public String deleteById(Long id) {
-        Property property = requireProperty(id);
+        Property property = requireOwnedProperty(id);
         for (PropertyMediaData media : property.getMedias()) {
             mediaApi.deleteMedia(media.getMediaURL());
         }
@@ -186,7 +189,7 @@ public class PropertyServiceImpl implements PropertyService {
         PropertyMediaData media = propertyMediaDataRepository.findById(id)
                 .orElseThrow(() -> new UserException("Property media not found with id: " + id));
 
-        Long propertyId = media.getProperty().getId();
+        Long propertyId = requireOwnedProperty(media.getProperty().getId()).getId();
         boolean wasCoverImage = media.getIsCoverImage();
 
         mediaApi.deleteMedia(media.getMediaURL());
@@ -213,7 +216,7 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     public Integer getPropertyMediaCount(Long propertyId) {
-        return requireProperty(propertyId).getMedias().size();
+        return requireVisibleProperty(propertyId).getMedias().size();
     }
 
     @Override
@@ -247,6 +250,33 @@ public class PropertyServiceImpl implements PropertyService {
     private Property requireProperty(Long id) {
         return propertyRepository.findById(id)
                 .orElseThrow(() -> new UserException("Property not found with id: " + id));
+    }
+
+    @Override
+    public void requireEditable(Long id) {
+        requireOwnedProperty(id);
+    }
+
+    /** Live listings are public; drafts and archived ones only to their agent or an admin. */
+    private Property requireVisibleProperty(Long id) {
+        Property property = requireProperty(id);
+        if (property.getListingStatus() != ListingStatus.ACTIVE && !canEdit(property)) {
+            throw new UserException("Property not found with id: " + id);
+        }
+        return property;
+    }
+
+    /** Only the agent who listed the property, or an admin, may change or remove it. */
+    private Property requireOwnedProperty(Long id) {
+        Property property = requireProperty(id);
+        if (!canEdit(property)) {
+            throw new UserException("You are not allowed to modify property with id: " + id);
+        }
+        return property;
+    }
+
+    private static boolean canEdit(Property property) {
+        return isAdmin() || Objects.equals(property.getAgentID(), UserContext.getUserId());
     }
 
     private void reAssignCoverImage(Long propertyId) {

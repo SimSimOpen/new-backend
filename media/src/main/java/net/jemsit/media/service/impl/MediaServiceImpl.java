@@ -30,6 +30,9 @@ public class MediaServiceImpl implements MediaService {
         Long userId = UserContext.getUserId();
         if (propertyId == null) {
             propertyId = productApi.createPropertyDraft(userId).id();
+        } else {
+            // Checked here, on the request thread: the async upload has no user context.
+            productApi.requirePropertyEditable(propertyId);
         }
         asyncMediaService.asyncProductMediaUpload(propertyId, readFiles(files), userId);
         return propertyId;
