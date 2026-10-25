@@ -55,7 +55,9 @@ public interface CarRepository extends JpaRepository<Car, Long>, JpaSpecificatio
 
     // Scalar projection, not findById: this is called from the public, unauthenticated view counter,
     // which only needs a name for the operator card. A car's name is its brand and model; the
-    // free-text title is the fallback for rows that carry neither.
+    // free-text title is the fallback for rows that carry neither. Returned as a List of row tuples:
+    // an Object[] return type is treated as collection-like by Spring Data, which would nest the
+    // single row's tuple inside a one-element array and break the column indexing at the call site.
     @Query("SELECT c.brand, c.model, c.title FROM Car c WHERE c.id = :id")
-    Object[] findNamePartsById(@Param("id") Long id);
+    List<Object[]> findNamePartsById(@Param("id") Long id);
 }

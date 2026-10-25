@@ -63,6 +63,12 @@ public class CarController {
         return ResponseEntity.ok(carService.getStats());
     }
 
+    /** Brand/model catalog for the add-car form's dropdowns. */
+    @GetMapping("brands")
+    public ResponseEntity<?> getBrands() {
+        return ResponseEntity.ok(carService.getBrands());
+    }
+
     @PostMapping("{id}/views")
     public ResponseEntity<?> incrementViews(@PathVariable Long id) {
         return ResponseEntity.ok(carService.incrementViews(id));

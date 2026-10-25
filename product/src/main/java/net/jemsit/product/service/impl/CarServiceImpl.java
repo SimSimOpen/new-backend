@@ -14,12 +14,17 @@ import net.jemsit.common.dto.request.product.car.CarFilterRequestDTO;
 import net.jemsit.common.dto.request.product.car.CarRequestDTO;
 import net.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
 import net.jemsit.common.dto.response.auth.UserDetailsResponseDTO;
+import net.jemsit.common.dto.response.product.car.CarBrandDto;
 import net.jemsit.common.dto.response.product.car.CarResponseDTO;
 import net.jemsit.common.dto.response.product.car.CarsStats;
 import net.jemsit.common.exceptions.UserException;
 import net.jemsit.product.data.model.car.Car;
+import net.jemsit.product.data.model.car.CarBrand;
 import net.jemsit.product.data.model.car.CarMediaData;
+import net.jemsit.product.data.model.car.CarModel;
+import net.jemsit.product.data.repository.car.CarBrandRepository;
 import net.jemsit.product.data.repository.car.CarMediaDataRepository;
+import net.jemsit.product.data.repository.car.CarModelRepository;
 import net.jemsit.product.data.repository.car.CarRepository;
 import net.jemsit.product.mapper.CarMapper;
 import net.jemsit.product.mapper.LocationNames;
@@ -34,7 +39,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +49,8 @@ public class CarServiceImpl implements CarService {
 
     private final CarRepository carRepository;
     private final CarMediaDataRepository carMediaDataRepository;
+    private final CarBrandRepository carBrandRepository;
+    private final CarModelRepository carModelRepository;
     private final CarMapper carMapper;
     // media calls back into product via ProductApi, so this edge stays lazy to avoid a startup cycle
     @Lazy
@@ -204,6 +213,25 @@ public class CarServiceImpl implements CarService {
         return carRepository.getCarsStats(hasRole(Roles.ADMIN) ? null : UserContext.getUserId());
     }
 
+    /**
+     * The full brand/model catalog for the add-car dropdowns. Two queries: brands, then every
+     * model grouped by its brand in memory, so a brand never triggers its own round trip.
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<CarBrandDto> getBrands() {
+        Map<Long, List<String>> modelsByBrand = carModelRepository.findAllWithBrands().stream()
+                .collect(Collectors.groupingBy(
+                        model -> model.getBrand().getId(),
+                        Collectors.mapping(CarModel::getName, Collectors.toList())));
+        return carBrandRepository.findAllByIsDeletedFalseOrderByNameAsc().stream()
+                .map(brand -> new CarBrandDto(brand.getName(),
+                        modelsByBrand.getOrDefault(brand.getId(), List.of()).stream()
+                                .sorted(String.CASE_INSENSITIVE_ORDER)
+                                .toList()))
+                .toList();
+    }
+
     @Override
     @Transactional
     public long incrementViews(Long id) {
@@ -222,10 +250,11 @@ public class CarServiceImpl implements CarService {
 
     /** Brand and model when present, else the free-text title; null when the row carries neither. */
     private String displayName(Long id) {
-        Object[] parts = carRepository.findNamePartsById(id);
-        if (parts == null) {
+        List<Object[]> rows = carRepository.findNamePartsById(id);
+        if (rows.isEmpty()) {
             return null;
         }
+        Object[] parts = rows.get(0);
         StringBuilder name = new StringBuilder();
         for (Object part : new Object[] { parts[0], parts[1] }) {
             if (part != null && !part.toString().isBlank()) {

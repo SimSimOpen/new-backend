@@ -3,10 +3,13 @@ package net.jemsit.product.service;
 import net.jemsit.common.dto.request.product.car.CarFilterRequestDTO;
 import net.jemsit.common.dto.request.product.car.CarRequestDTO;
 import net.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
+import net.jemsit.common.dto.response.product.car.CarBrandDto;
 import net.jemsit.common.dto.response.product.car.CarResponseDTO;
 import net.jemsit.common.dto.response.product.car.CarsStats;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface CarService {
     CarResponseDTO createDraft(Long userId);
@@ -32,4 +35,6 @@ public interface CarService {
     CarsStats getStats();
 
     long incrementViews(Long id);
+
+    List<CarBrandDto> getBrands();
 }
