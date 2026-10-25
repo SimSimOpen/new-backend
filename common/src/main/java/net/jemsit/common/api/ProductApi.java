@@ -3,6 +3,7 @@ package net.jemsit.common.api;
 import net.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
 import net.jemsit.common.dto.response.product.car.CarResponseDTO;
 import net.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
+import net.jemsit.common.dto.response.product.secondhand.SecondHandResponseDTO;
 
 public interface ProductApi {
 
@@ -16,4 +17,11 @@ public interface ProductApi {
     void requireCarEditable(Long carId);
 
     CarResponseDTO addCarImage(AddPropertyImagesRequestDTO request, Long userId);
+
+    SecondHandResponseDTO createSecondHandDraft(Long userId);
+
+    /** Throws unless the current user owns the second-hand item or is an admin. */
+    void requireSecondHandEditable(Long itemId);
+
+    SecondHandResponseDTO addSecondHandImage(AddPropertyImagesRequestDTO request, Long userId);
 }

@@ -9,6 +9,8 @@ public interface MediaService {
 
     Long uploadCarMedia(Long carId, List<MultipartFile> files);
 
+    Long uploadSecondHandMedia(Long itemId, List<MultipartFile> files);
+
     void deleteMedia(String mediaUrl);
 
     Long uploadUserAvatar(Long userId, MultipartFile file);

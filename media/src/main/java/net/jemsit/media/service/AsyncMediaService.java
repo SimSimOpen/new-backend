@@ -7,5 +7,7 @@ public interface AsyncMediaService {
 
     void asyncCarMediaUpload(Long carId, List<FileData> files, Long userId);
 
+    void asyncSecondHandMediaUpload(Long itemId, List<FileData> files, Long userId);
+
     void asyncUserAvatarUpload(Long userId, FileData file);
 }

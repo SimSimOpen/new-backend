@@ -54,6 +54,8 @@ public class SecurityConfig {
                                 "/api/product/v1/property/*/views",
                                 "/api/product/v1/car/filter",
                                 "/api/product/v1/car/*/views",
+                                "/api/product/v1/second-hand/filter",
+                                "/api/product/v1/second-hand/*/views",
                                 "/actuator/health",
                                 "/error",
                                 // The notify module guards its own endpoints with NotifyTokenInterceptor

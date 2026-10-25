@@ -5,8 +5,10 @@ import net.jemsit.common.api.ProductApi;
 import net.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
 import net.jemsit.common.dto.response.product.car.CarResponseDTO;
 import net.jemsit.common.dto.response.product.propeprty.PropertyResponseDTO;
+import net.jemsit.common.dto.response.product.secondhand.SecondHandResponseDTO;
 import net.jemsit.product.service.CarService;
 import net.jemsit.product.service.PropertyService;
+import net.jemsit.product.service.SecondHandService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,6 +17,7 @@ public class ProductApiImpl implements ProductApi {
 
     private final PropertyService propertyService;
     private final CarService carService;
+    private final SecondHandService secondHandService;
 
     @Override
     public PropertyResponseDTO createPropertyDraft(Long userId) {
@@ -39,5 +42,20 @@ public class ProductApiImpl implements ProductApi {
     @Override
     public CarResponseDTO addCarImage(AddPropertyImagesRequestDTO request, Long userId) {
         return carService.addImages(request, userId);
+    }
+
+    @Override
+    public SecondHandResponseDTO createSecondHandDraft(Long userId) {
+        return secondHandService.createDraft(userId);
+    }
+
+    @Override
+    public void requireSecondHandEditable(Long itemId) {
+        secondHandService.requireEditable(itemId);
+    }
+
+    @Override
+    public SecondHandResponseDTO addSecondHandImage(AddPropertyImagesRequestDTO request, Long userId) {
+        return secondHandService.addImages(request, userId);
     }
 }

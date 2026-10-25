@@ -48,6 +48,19 @@ public class MediaServiceImpl implements MediaService {
         return carId;
     }
 
+    @Override
+    public Long uploadSecondHandMedia(Long itemId, List<MultipartFile> files) {
+        Long userId = UserContext.getUserId();
+        if (itemId == null) {
+            itemId = productApi.createSecondHandDraft(userId).id();
+        } else {
+            // Checked here, on the request thread: the async upload has no user context.
+            productApi.requireSecondHandEditable(itemId);
+        }
+        asyncMediaService.asyncSecondHandMediaUpload(itemId, readFiles(files), userId);
+        return itemId;
+    }
+
     // Bytes are read here, on the request thread: the multipart temp files are gone by the time the
     // async upload runs.
     private static List<FileData> readFiles(List<MultipartFile> files) {
