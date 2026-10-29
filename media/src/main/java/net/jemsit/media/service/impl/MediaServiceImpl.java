@@ -61,6 +61,19 @@ public class MediaServiceImpl implements MediaService {
         return itemId;
     }
 
+    @Override
+    public Long uploadServiceMedia(Long listingId, List<MultipartFile> files) {
+        Long userId = UserContext.getUserId();
+        if (listingId == null) {
+            listingId = productApi.createServiceDraft(userId).id();
+        } else {
+            // Checked here, on the request thread: the async upload has no user context.
+            productApi.requireServiceEditable(listingId);
+        }
+        asyncMediaService.asyncServiceMediaUpload(listingId, readFiles(files), userId);
+        return listingId;
+    }
+
     // Bytes are read here, on the request thread: the multipart temp files are gone by the time the
     // async upload runs.
     private static List<FileData> readFiles(List<MultipartFile> files) {

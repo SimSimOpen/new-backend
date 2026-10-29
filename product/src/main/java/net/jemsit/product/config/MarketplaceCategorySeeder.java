@@ -38,7 +38,7 @@ public class MarketplaceCategorySeeder implements ApplicationRunner {
     private static final String SEED_FILE = "data/marketplace-categories.json";
 
     /** Slugs that are live and must stay live even if their row was seeded as unavailable. */
-    private static final Set<String> LAUNCHED = Set.of("cars", "second-hand");
+    private static final Set<String> LAUNCHED = Set.of("cars", "second-hand", "services");
 
     private final ObjectMapper objectMapper;
     private final MarketplaceCategoryRepository categoryRepository;

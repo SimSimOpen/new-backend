@@ -30,6 +30,7 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
     private static final String PROPERTIES_BASE_PATH = "properties/";
     private static final String CARS_BASE_PATH = "cars/";
     private static final String SECOND_HAND_BASE_PATH = "second-hand/";
+    private static final String SERVICES_BASE_PATH = "services/";
     private static final String USER_AVATARS_BASE_PATH = "user-avatars/";
     private static final String PRODUCT_BUCKET_NAME = "real-estate-media";
     private static final String USER_BUCKET_NAME = "user-media";
@@ -64,6 +65,15 @@ public class AsyncMediaServiceImpl implements AsyncMediaService {
         List<String> urls = uploadListingMedia(SECOND_HAND_BASE_PATH, itemId, files);
         if (!urls.isEmpty()) {
             productApi.addSecondHandImage(new AddPropertyImagesRequestDTO(itemId, urls), userId);
+        }
+    }
+
+    @Override
+    @Async
+    public void asyncServiceMediaUpload(Long listingId, List<FileData> files, Long userId) {
+        List<String> urls = uploadListingMedia(SERVICES_BASE_PATH, listingId, files);
+        if (!urls.isEmpty()) {
+            productApi.addServiceImage(new AddPropertyImagesRequestDTO(listingId, urls), userId);
         }
     }
 

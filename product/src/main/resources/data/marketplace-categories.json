@@ -38,10 +38,10 @@
   {
     "slug": "services",
     "title": "Services",
-    "tagline": "Repairs, cleaning, tutoring & more",
-    "description": "Hire trusted local professionals for repairs, moving, cleaning, lessons and more.",
+    "tagline": "Offer a service or find one",
+    "description": "Two-sided marketplace: professionals offer repairs, cleaning, tutoring and more, and people post the jobs they need done.",
     "imageUrl": "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80",
-    "available": false,
+    "available": true,
     "sortOrder": 5
   },
   {

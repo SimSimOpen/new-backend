@@ -36,6 +36,12 @@ public class MediaController {
         return ResponseEntity.ok(mediaService.uploadSecondHandMedia(itemId, files));
     }
 
+    @PostMapping(value = "/upload-service-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadServiceMedia(@RequestParam(value = "listing_id", required = false) Long listingId,
+                                                @RequestPart("files") List<MultipartFile> files) {
+        return ResponseEntity.ok(mediaService.uploadServiceMedia(listingId, files));
+    }
+
     @PostMapping(value = "/upload-user-avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadUserAvatar(@RequestParam("user_id") Long userId,
                                               @RequestPart("file") MultipartFile file) {

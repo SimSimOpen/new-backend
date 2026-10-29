@@ -11,6 +11,8 @@ public interface MediaService {
 
     Long uploadSecondHandMedia(Long itemId, List<MultipartFile> files);
 
+    Long uploadServiceMedia(Long listingId, List<MultipartFile> files);
+
     void deleteMedia(String mediaUrl);
 
     Long uploadUserAvatar(Long userId, MultipartFile file);
