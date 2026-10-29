@@ -18,6 +18,11 @@ public record SecondHandFilterRequestDTO(
         Long districtId,
         Long placeId,
         BigDecimal priceFrom,
-        BigDecimal priceTo
+        BigDecimal priceTo,
+        /**
+         * Opt-in to "my listings", sent by the admin panel only. Without it the caller's identity is
+         * ignored, so an agent browsing the client sees the same public list as any visitor.
+         */
+        Boolean mine
 ) {
 }

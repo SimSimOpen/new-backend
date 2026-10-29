@@ -149,12 +149,14 @@ public class CarServiceImpl implements CarService {
 
     @Override
     public Page<CarResponseDTO> filter(CarFilterRequestDTO filter, Pageable pageable) {
-        // Agents see only their own cars in any status, admins see everything, and the public
-        // (anonymous or client) only ever sees live listings whatever status it asks for.
+        // With `mine` (the admin panel) agents see only their own cars in any status and admins see
+        // everything. Without it the caller is treated as the public, whatever token they carry, so
+        // an agent browsing the client sees the same live listings as a visitor.
+        boolean mine = Boolean.TRUE.equals(filter.mine());
         boolean isAdmin = hasRole(Roles.ADMIN);
         boolean isAgent = !isAdmin && hasRole(Roles.AGENT);
-        ListingStatus status = isAdmin || isAgent ? filter.listingStatus() : ListingStatus.ACTIVE;
-        Long agentScope = isAgent ? UserContext.getUserId() : null;
+        ListingStatus status = mine && (isAdmin || isAgent) ? filter.listingStatus() : ListingStatus.ACTIVE;
+        Long agentScope = mine && isAgent ? UserContext.getUserId() : null;
 
         Specification<Car> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();

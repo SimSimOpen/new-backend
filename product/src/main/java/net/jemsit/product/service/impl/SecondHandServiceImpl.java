@@ -142,13 +142,17 @@ public class SecondHandServiceImpl implements SecondHandService {
 
     @Override
     public Page<SecondHandResponseDTO> filter(SecondHandFilterRequestDTO filter, Pageable pageable) {
-        // Agents see only their own items in any status, admins see everything, and the public
-        // (anonymous or client) only ever sees live listings whatever status it asks for.
+        // With `mine` (the admin panel) agents see only their own items in any status and admins see
+        // everything. Without it the caller is treated as the public, whatever token they carry, so
+        // an agent browsing the client sees the same live listings as a visitor - sold items included
+        // in what is hidden from them.
+        boolean mine = Boolean.TRUE.equals(filter.mine());
         boolean isAdmin = hasRole(Roles.ADMIN);
         boolean isAgent = !isAdmin && hasRole(Roles.AGENT);
-        boolean isPublic = !isAdmin && !isAgent;
-        ListingStatus status = isAdmin || isAgent ? filter.listingStatus() : ListingStatus.ACTIVE;
-        Long agentScope = isAgent ? UserContext.getUserId() : null;
+        boolean staff = mine && (isAdmin || isAgent);
+        boolean isPublic = !staff;
+        ListingStatus status = staff ? filter.listingStatus() : ListingStatus.ACTIVE;
+        Long agentScope = mine && isAgent ? UserContext.getUserId() : null;
 
         Specification<SecondHandItem> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();

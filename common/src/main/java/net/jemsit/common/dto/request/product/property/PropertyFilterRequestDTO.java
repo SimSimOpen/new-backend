@@ -20,6 +20,11 @@ public  record PropertyFilterRequestDTO(
         BigDecimal priceTo,
         Integer roomsFrom,
         Integer floorFrom,
-        List<String> amenities
+        List<String> amenities,
+        /**
+         * Opt-in to "my listings", sent by the admin panel only. Without it the caller's identity is
+         * ignored, so an agent browsing the client sees the same public list as any visitor.
+         */
+        Boolean mine
 ) {
 }
