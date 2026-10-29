@@ -41,6 +41,7 @@ public interface SecondHandItemRepository extends JpaRepository<SecondHandItem, 
     @Query("SELECT new net.jemsit.common.dto.response.product.secondhand.SecondHandStats(" +
             "COUNT(s), " +
             "COALESCE(SUM(CASE WHEN s.listingStatus = 'ACTIVE' THEN 1 ELSE 0 END), 0), " +
+            "COALESCE(SUM(CASE WHEN s.occupancyStatus = 'SOLD' THEN 1 ELSE 0 END), 0), " +
             "COALESCE(SUM(CASE WHEN s.listingStatus = 'DRAFT' THEN 1 ELSE 0 END), 0)) " +
             "FROM SecondHandItem s WHERE (:agentId IS NULL OR s.agentID = :agentId)")
     SecondHandStats getSecondHandStats(@Param("agentId") Long agentId);

@@ -38,6 +38,29 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findAllByPhoneNumberIsNullAndProfileIdIsNotNull();
 
+    /**
+     * The account an OTP sign-in belongs to: the one whose username is the number the code was sent to
+     * (accounts created by the OTP flow itself are named that way) or any account carrying the same
+     * digits in its phone column. Agent phones were typed into a free-text admin field while the
+     * client always sends E.164, so formatting must not decide the match. One number can hold both a
+     * client account opened by an earlier OTP sign-in and the agent account an admin created for the
+     * same person, and the agent one wins - that is where the listings live.
+     */
+    @Query(value = """
+            SELECT * FROM users u
+            WHERE u.is_deleted = false
+              AND (u.username = :username
+                   OR (:digits <> '' AND regexp_replace(u.phone_number, '\\D', '', 'g') = :digits))
+            ORDER BY CASE
+                       WHEN 'AGENT' = ANY(u.authorities) THEN 0
+                       WHEN 'ADMIN' = ANY(u.authorities) OR 'MANAGER' = ANY(u.authorities) THEN 1
+                       ELSE 2
+                     END,
+                     u.id ASC
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<User> findOtpAccount(@Param("username") String username, @Param("digits") String digits);
+
     boolean existsByUsernameAndIdNot(String username, Long id);
 
     boolean existsByEmailAndIdNot(String email, Long id);

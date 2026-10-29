@@ -9,6 +9,7 @@ import net.jemsit.common.api.OperatorFeedApi;
 import net.jemsit.common.data.enums.EventMessages;
 import net.jemsit.common.data.enums.Roles;
 import net.jemsit.common.data.enums.property.ListingStatus;
+import net.jemsit.common.data.enums.property.OccupancyStatus;
 import net.jemsit.common.dto.message.MediaUploaded;
 import net.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
 import net.jemsit.common.dto.request.product.secondhand.SecondHandFilterRequestDTO;
@@ -55,6 +56,7 @@ public class SecondHandServiceImpl implements SecondHandService {
     public SecondHandResponseDTO createDraft(Long userId) {
         SecondHandItem item = new SecondHandItem();
         item.setListingStatus(ListingStatus.DRAFT);
+        item.setOccupancyStatus(OccupancyStatus.AVAILABLE);
         UserDetailsResponseDTO userDetails = authApi.getById(userId);
         item.setAgentID(userDetails.id());
         item.setAgent(userDetails.username());
@@ -144,6 +146,7 @@ public class SecondHandServiceImpl implements SecondHandService {
         // (anonymous or client) only ever sees live listings whatever status it asks for.
         boolean isAdmin = hasRole(Roles.ADMIN);
         boolean isAgent = !isAdmin && hasRole(Roles.AGENT);
+        boolean isPublic = !isAdmin && !isAgent;
         ListingStatus status = isAdmin || isAgent ? filter.listingStatus() : ListingStatus.ACTIVE;
         Long agentScope = isAgent ? UserContext.getUserId() : null;
 
@@ -154,6 +157,13 @@ public class SecondHandServiceImpl implements SecondHandService {
             }
             if (status != null) {
                 predicates.add(cb.equal(root.get("listingStatus"), status));
+            }
+            if (isPublic) {
+                // Sold items leave the public browse list; the owner and admins still see them.
+                // Null counts as available: rows written before this field existed have no value.
+                predicates.add(cb.or(
+                        cb.isNull(root.get("occupancyStatus")),
+                        cb.notEqual(root.get("occupancyStatus"), OccupancyStatus.SOLD)));
             }
             if (filter.search() != null && !filter.search().isBlank()) {
                 String pattern = "%" + filter.search().trim().toLowerCase() + "%";

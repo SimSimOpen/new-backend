@@ -34,6 +34,12 @@ public interface AuthMapper {
     @Mapping(target = "roles", source = "user.authorities", qualifiedByName = "mapAuthoritiesToRoles")
     UserDetailsResponseDTO toDto(User user);
 
+    /** Same payload with the profile attached; both sources carry an id, so it is pinned to the user. */
+    @Mapping(target = "id", source = "user.id")
+    @Mapping(target = "roles", source = "user.authorities", qualifiedByName = "mapAuthoritiesToRoles")
+    @Mapping(target = "profile", source = "profile")
+    UserDetailsResponseDTO toDto(User user, ProfileResponseDTO profile);
+
 
     @Named("mapAuthoritiesToRoles")
     default List<Roles> mapAuthoritiesToRoles(Collection<? extends GrantedAuthority> authorities) {

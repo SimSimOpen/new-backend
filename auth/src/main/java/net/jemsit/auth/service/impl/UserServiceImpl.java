@@ -35,7 +35,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDetailsResponseDTO getUserDetails() {
-        return authMapper.toDto(currentUser());
+        return toDetails(currentUser());
+    }
+
+    /**
+     * The details payload carries the profile as well: it is what an already-authenticated session
+     * (for example one handed over from the client app) uses to fill the stored user data, and the
+     * profile is where the avatar URL lives.
+     */
+    private UserDetailsResponseDTO toDetails(User user) {
+        return authMapper.toDto(user, findProfile(user.getProfileId()));
     }
 
     @Override
@@ -63,7 +72,7 @@ public class UserServiceImpl implements UserService {
                 userDetails.description()
         );
         profileApi.updateProfile(user.getProfileId(), profileRequest);
-        return authMapper.toDto(userRepository.saveAndFlush(user));
+        return toDetails(userRepository.saveAndFlush(user));
     }
 
     @Override

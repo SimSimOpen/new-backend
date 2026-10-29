@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -105,13 +106,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthenticationResponseDTO authenticateWithOtp(AuthenticationRequestDTO requestDTO) {
-        var user = userRepository.findByUsername(requestDTO.username());
+        var user = findOtpAccount(requestDTO.username());
         if (user.isEmpty()) {
             User newUser = new User();
             newUser.setUsername(requestDTO.username());
             // OTP accounts are keyed by the phone number the code was sent to
             newUser.setPhoneNumber(normalizePhone(requestDTO.username()));
-            newUser.setAuthorities(List.of(Roles.CLIENT));
+            // A client sign-up is an agent sign-up: it starts with publishing rights, and only the
+            // admin panel can raise it further.
+            newUser.setAuthorities(List.of(Roles.AGENT));
             var savedUser = userRepository.save(newUser);
             var tokenModel = createTokenModel(savedUser);
             savedUser.addToken(tokenModel);
@@ -123,16 +126,43 @@ public class AuthServiceImpl implements AuthService {
             // is the signup route that actually gets used. Only the creation branch announces anything.
             // Note the username here is the phone number the OTP was sent to, so that is what the
             // operator's card shows.
-            operatorFeedApi.accountRegistered(Roles.CLIENT, savedUser.getUsername());
+            operatorFeedApi.accountRegistered(Roles.AGENT, savedUser.getUsername());
             return authMapper.toDTO(userRepository.saveAndFlush(savedUser), tokenModel);
         } else {
             var existing = user.get();
             requireActive(existing);
+            promoteClientToAgent(existing);
             var tokenModel = createTokenModel(existing);
             existing.addToken(tokenModel);
             existing.setUpdatedAt(LocalDateTime.now());
             return authMapper.toDTO(userRepository.saveAndFlush(existing), tokenModel);
         }
+    }
+
+    /**
+     * Signing in on the client is an agent signing in: anyone who does it may publish, and an admin
+     * can only be made from the admin panel. Accounts opened before that rule still carry CLIENT, so
+     * they are upgraded here rather than being locked out of their own listings. ADMIN, MANAGER and
+     * AGENT are left exactly as they are.
+     */
+    private void promoteClientToAgent(User user) {
+        var names = user.getAuthorities().stream().map(authority -> authority.getAuthority()).toList();
+        if (names.equals(List.of(Roles.CLIENT.name()))) {
+            user.setAuthorities(List.of(Roles.AGENT));
+        }
+    }
+
+    /**
+     * OTP sign-in is keyed by the phone number the code was sent to, and accounts created there use
+     * that number as the username. Accounts created through the admin use a real username instead, so
+     * their phone number is matched as well: an agent signing in on the client must land on his own
+     * AGENT account (and see his own listings) rather than provisioning a duplicate CLIENT one.
+     */
+    private Optional<User> findOtpAccount(String username) {
+        // The phone field is free text, so the query compares digits only
+        // (+998 90 123-45-67 == +998901234567) and prefers an AGENT account over a CLIENT one.
+        String digits = username == null ? "" : username.replaceAll("\\D", "");
+        return userRepository.findOtpAccount(username, digits);
     }
 
     private static void requireActive(User user) {

@@ -52,6 +52,10 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // The column is nullable, so a legacy row without roles must not take the caller down with an NPE
+        if (this.authorities == null) {
+            return List.of();
+        }
         return this.authorities
                 .stream().map(r -> new SimpleGrantedAuthority(r.name()))
                 .toList();

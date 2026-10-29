@@ -2,6 +2,7 @@ package net.jemsit.common.dto.response.product.secondhand;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import net.jemsit.common.data.enums.property.ListingStatus;
+import net.jemsit.common.data.enums.property.OccupancyStatus;
 import net.jemsit.common.data.enums.property.OfferType;
 import net.jemsit.common.data.enums.secondhand.ItemCondition;
 import net.jemsit.common.data.enums.secondhand.SecondHandCategory;
@@ -22,6 +23,8 @@ public record SecondHandResponseDTO(
         ItemCondition condition,
         OfferType offerType,
         ListingStatus listingStatus,
+        /** AVAILABLE or SOLD; null on rows created before the field existed, meaning available. */
+        OccupancyStatus occupancyStatus,
 
         String ownerContact,
         String agent,

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import net.jemsit.common.data.enums.property.ListingStatus;
+import net.jemsit.common.data.enums.property.OccupancyStatus;
 import net.jemsit.common.data.enums.property.OfferType;
 import net.jemsit.common.data.enums.secondhand.ItemCondition;
 import net.jemsit.common.data.enums.secondhand.SecondHandCategory;
@@ -41,6 +42,12 @@ public class SecondHandItem extends BaseEntity {
     private OfferType offerType;
     @Enumerated(EnumType.STRING)
     private ListingStatus listingStatus;
+    /**
+     * Whether the item is still on the market. Only AVAILABLE and SOLD are used here (RENTED is a
+     * car/property concept); rows written before this field existed are null and count as available.
+     */
+    @Enumerated(EnumType.STRING)
+    private OccupancyStatus occupancyStatus;
 
     // owner or agent details
     private String agent;
