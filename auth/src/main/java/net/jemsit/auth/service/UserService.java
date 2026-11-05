@@ -2,8 +2,6 @@ package net.jemsit.auth.service;
 
 import net.jemsit.auth.dto.AgentResponseDTO;
 import net.jemsit.auth.dto.AgentUpdateRequestDTO;
-import net.jemsit.auth.dto.ClientResponseDTO;
-import net.jemsit.auth.dto.PageResponseDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
 import net.jemsit.common.dto.response.auth.UserDetailsResponseDTO;
 
@@ -17,8 +15,6 @@ public interface UserService {
     List<AgentResponseDTO> getAgents();
 
     AgentResponseDTO updateAgent(Long id, AgentUpdateRequestDTO request);
-
-    PageResponseDTO<ClientResponseDTO> getClients(String search, int page, int size);
 
     AgentResponseDTO deactivateAgent(Long id);
 
