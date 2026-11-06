@@ -33,19 +33,17 @@ public class UserDashboardService {
                 .addValue("since", now.minusMonths(MONTHS - 1).atDay(1).atStartOfDay())
                 .addValue("monthStart", now.atDay(1).atStartOfDay());
 
-        // Sign-ups become AGENT accounts and older ones may still be CLIENT, so both count as users.
         Map<String, Object> totals = jdbc.queryForMap("""
-                SELECT COUNT(*) FILTER (WHERE 'CLIENT' = ANY(authorities) OR 'AGENT' = ANY(authorities)) AS clients,
+                SELECT COUNT(*) FILTER (WHERE 'CLIENT' = ANY(authorities)) AS clients,
                        COUNT(*) FILTER (WHERE 'AGENT' = ANY(authorities)) AS agents,
-                       COUNT(*) FILTER (WHERE ('CLIENT' = ANY(authorities) OR 'AGENT' = ANY(authorities))
-                                        AND created_at >= :monthStart) AS new_clients
+                       COUNT(*) FILTER (WHERE 'CLIENT' = ANY(authorities) AND created_at >= :monthStart) AS new_clients
                 FROM users WHERE is_deleted = false
                 """, params);
 
         Map<String, Long> perMonth = new HashMap<>();
         jdbc.query("""
                 SELECT to_char(date_trunc('month', created_at), 'YYYY-MM') AS month, COUNT(*) AS count
-                FROM users WHERE ('CLIENT' = ANY(authorities) OR 'AGENT' = ANY(authorities)) AND created_at >= :since
+                FROM users WHERE 'CLIENT' = ANY(authorities) AND created_at >= :since
                 GROUP BY 1
                 """, params, rs -> {
             perMonth.put(rs.getString("month"), rs.getLong("count"));

@@ -32,6 +32,12 @@ public class AuthController {
         return ResponseEntity.ok(authService.authenticateWithOtp(new AuthenticationRequestDTO(phoneNumber, null)));
     }
 
+    @PostMapping("register/client")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDTO request) {
+        authService.registerClient(request);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("register/agent")
     public ResponseEntity<?> registerAgent(@Valid @RequestBody RegisterRequestDTO request) {
         authService.registerAgent(request);

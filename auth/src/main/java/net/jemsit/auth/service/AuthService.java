@@ -7,6 +7,8 @@ import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
 public interface AuthService {
     AuthenticationResponseDTO authenticate(AuthenticationRequestDTO requestDTO);
 
+    void registerClient(RegisterRequestDTO request);
+
     void registerAgent(RegisterRequestDTO request);
 
     void registerAdmin(RegisterRequestDTO request);

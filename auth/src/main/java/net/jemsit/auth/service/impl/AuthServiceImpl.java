@@ -54,6 +54,24 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void registerClient(RegisterRequestDTO request) {
+        var userExists = userRepository.findByUsernameOrEmail(request.username(), request.email());
+        if (userExists.isPresent()) {
+            throw new UserException("User with given username or email already exists");
+        }
+        User newUser = new User();
+        newUser.setUsername(request.username());
+        newUser.setPassword(passwordEncoder.encode(request.password()));
+        newUser.setEmail(request.email());
+        newUser.setAuthorities(List.of(Roles.CLIENT));
+        var savedUser = userRepository.save(newUser);
+        var resp = createProfileForUser(savedUser.getId());
+        savedUser.setProfileId(resp.id());
+        userRepository.save(savedUser);
+        operatorFeedApi.accountRegistered(Roles.CLIENT, savedUser.getUsername());
+    }
+
+    @Override
     public void registerAgent(RegisterRequestDTO request) {
         var userExists = userRepository.findByUsernameOrEmail(request.username(), request.email());
         if (userExists.isPresent()) {
