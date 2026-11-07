@@ -9,4 +9,5 @@
 {"id": 8, "region_id": 1, "name_uz": "Uchtepa tumani", "name_oz": "Uchtepa tumani", "name_ru": "Учтепинский район"},
 {"id": 9, "region_id": 1, "name_uz": "Yunusobod tumani", "name_oz": "Yunusobod tumani", "name_ru": "Юнусабадский район"},
 {"id": 10, "region_id": 1, "name_uz": "Yashnobod tumani", "name_oz": "Yashnobod tumani", "name_ru": "Яшнабадский район"},
-{"id": 11, "region_id": 1, "name_uz": "Yangihayot tumani", "name_oz": "Yangihayot tumani", "name_ru": "Янгихаётский район"}]
+{"id": 11, "region_id": 1, "name_uz": "Yangihayot tumani", "name_oz": "Yangihayot tumani", "name_ru": "Янгихаётский район"},
+{"id": 12, "region_id": 1, "name_uz": "Yakkasaroy tumani", "name_oz": "Yakkasaroy tumani", "name_ru": "Яккасарайский район"}]

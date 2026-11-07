@@ -4,12 +4,15 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurationExcludeFilter;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-@SpringBootApplication
+// Authentication is JWT-only (see SecurityConfig), so Boot's default in-memory user would never be
+// used; excluding it also stops the "Using generated security password" line at startup.
+@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 // Writing @ComponentScan explicitly replaces the one @SpringBootApplication would have applied, and
 // with it drops that scan's default filters. Two matter here, both for net.jemsit.notify:
 //

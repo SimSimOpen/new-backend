@@ -41,6 +41,10 @@ import java.util.Map;
  * INSERT INTO seed_meta (key, value) VALUES ('location_dataset', 'tashkent-v1')
  *  ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
  * }</pre>
+ *
+ * <p>Rows appended to the JSON without touching existing ids don't need any of that: bump
+ * {@link #ADDITIONS_VERSION} instead and the next boot inserts only the missing rows, leaving every
+ * listing's location intact.
  */
 @Component
 @Order(1)
@@ -54,6 +58,9 @@ public class DatabaseSeeder implements ApplicationRunner {
     // Bump whenever the shipped JSON changes in a way that makes stored ids meaningless.
     private static final String DATASET_VERSION = "tashkent-v1";
     private static final String DATASET_KEY = "location_dataset";
+    // Bump whenever rows are appended to the JSON and every existing id keeps its meaning.
+    private static final String ADDITIONS_VERSION = "tashkent-v1-yandex-places";
+    private static final String ADDITIONS_KEY = "location_additions";
 
     // Oldest first: villages reference districts, districts reference regions.
     private static final List<String> LOCATION_TABLES = List.of("regions", "districts", "villages");
@@ -78,9 +85,36 @@ public class DatabaseSeeder implements ApplicationRunner {
         jdbc.execute(CREATE_SEED_META);
         if (DATASET_VERSION.equals(datasetVersion())) {
             refillEmptyTables();
+            appendNewRows();
             return;
         }
         replaceDataset();
+    }
+
+    private void appendNewRows() {
+        if (ADDITIONS_VERSION.equals(metaValue(ADDITIONS_KEY))) {
+            return;
+        }
+        tx.executeWithoutResult(status -> {
+            int districts = 0;
+            for (Map<String, Object> row : readRows("data/districts.json")) {
+                districts += jdbc.update("""
+                        INSERT INTO districts (id, region_id, name_uz, name_oz, name_ru) VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT (id) DO NOTHING""",
+                        row.get("id"), row.get("region_id"), row.get("name_uz"), row.get("name_oz"), row.get("name_ru"));
+            }
+            int places = 0;
+            for (Map<String, Object> row : readRows("data/villages.json")) {
+                places += jdbc.update("""
+                        INSERT INTO villages (id, district_id, name_uz, name_oz, name_ru) VALUES (?, ?, ?, ?, ?)
+                        ON CONFLICT (id) DO NOTHING""",
+                        row.get("id"), row.get("district_id"), row.get("name_uz"), row.get("name_oz"), row.get("name_ru"));
+            }
+            alignSequence("districts");
+            alignSequence("villages");
+            jdbc.update(MARK_DATASET, ADDITIONS_KEY, ADDITIONS_VERSION);
+            log.info("Location additions {}: added {} districts, {} places", ADDITIONS_VERSION, districts, places);
+        });
     }
 
     private void replaceDataset() {
@@ -94,6 +128,7 @@ public class DatabaseSeeder implements ApplicationRunner {
             seedVillages();
             LOCATION_TABLES.forEach(this::alignSequence);
             jdbc.update(MARK_DATASET, DATASET_KEY, DATASET_VERSION);
+            jdbc.update(MARK_DATASET, ADDITIONS_KEY, ADDITIONS_VERSION);
             log.info("Location dataset {}: detached {} listing locations, seeded {} regions, {} districts, {} places",
                     DATASET_VERSION, detached, countOf("regions"), countOf("districts"), countOf("villages"));
         });
@@ -118,8 +153,12 @@ public class DatabaseSeeder implements ApplicationRunner {
     }
 
     private String datasetVersion() {
-        List<String> versions = jdbc.queryForList("SELECT value FROM seed_meta WHERE key = ?", String.class, DATASET_KEY);
-        return versions.isEmpty() ? null : versions.get(0);
+        return metaValue(DATASET_KEY);
+    }
+
+    private String metaValue(String key) {
+        List<String> values = jdbc.queryForList("SELECT value FROM seed_meta WHERE key = ?", String.class, key);
+        return values.isEmpty() ? null : values.get(0);
     }
 
     private boolean isEmpty(String table) {
