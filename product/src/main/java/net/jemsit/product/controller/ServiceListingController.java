@@ -63,6 +63,12 @@ public class ServiceListingController {
         return ResponseEntity.ok(serviceListingService.getStats());
     }
 
+    /** Public: a shared link opens a live listing whoever follows it; anything else is not found. */
+    @GetMapping("{id}/public")
+    public ResponseEntity<?> getPublished(@PathVariable Long id) {
+        return ResponseEntity.ok(serviceListingService.getPublished(id));
+    }
+
     @PostMapping("{id}/views")
     public ResponseEntity<?> incrementViews(@PathVariable Long id) {
         return ResponseEntity.ok(serviceListingService.incrementViews(id));

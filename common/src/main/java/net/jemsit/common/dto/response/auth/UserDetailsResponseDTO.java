@@ -8,6 +8,7 @@ public record UserDetailsResponseDTO(
         Long id,
         String username,
         String email,
+        String telegramUsername,
         List<Roles> roles,
         ProfileResponseDTO profile
 ) {

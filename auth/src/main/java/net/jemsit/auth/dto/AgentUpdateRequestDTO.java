@@ -15,6 +15,7 @@ public record AgentUpdateRequestDTO(
         String firstName,
         String lastName,
         @Pattern(regexp = "^$|^\\+?[0-9 ()-]{7,20}$", message = "Phone number should be valid")
-        String phoneNumber
+        String phoneNumber,
+        String telegramUsername
 ) {
 }

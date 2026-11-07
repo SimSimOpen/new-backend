@@ -61,6 +61,12 @@ public class PropertyController {
         return ResponseEntity.ok(propertyService.getAllPublished(pageable));
     }
 
+    /** Public: a shared link opens a live listing whoever follows it; anything else is not found. */
+    @GetMapping("{id}/public")
+    public ResponseEntity<?> getPublished(@PathVariable Long id) {
+        return ResponseEntity.ok(propertyService.getPublished(id));
+    }
+
     @PostMapping("{id}/views")
     public ResponseEntity<?> incrementPropertyViews(@PathVariable Long id) {
         return ResponseEntity.ok(propertyService.incrementViews(id));

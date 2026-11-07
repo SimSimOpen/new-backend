@@ -58,6 +58,14 @@ public class SecurityConfig {
                                 "/api/product/v1/second-hand/*/views",
                                 "/api/product/v1/services/filter",
                                 "/api/product/v1/services/*/views",
+                                // Opening a shared link, and saving or sharing without an account.
+                                "/api/product/v1/property/*/public",
+                                "/api/product/v1/car/*/public",
+                                "/api/product/v1/second-hand/*/public",
+                                "/api/product/v1/services/*/public",
+                                "/api/product/v1/engagement/saved",
+                                "/api/product/v1/engagement/saved/**",
+                                "/api/product/v1/engagement/shares/**",
                                 "/actuator/health",
                                 "/error",
                                 // The notify module guards its own endpoints with NotifyTokenInterceptor
@@ -70,6 +78,8 @@ public class SecurityConfig {
                         // Read-only: the client's home page lists categories anonymously, but
                         // updating one (PUT on the same path) still requires an admin.
                         .requestMatchers(HttpMethod.GET, "/api/product/v1/category/**").permitAll()
+                        // The Telegram username behind a listing's contact button.
+                        .requestMatchers(HttpMethod.GET, "/api/auth/v1/agents/*/contact").permitAll()
                         // Read-only lookup lists (regions/districts/places) for the public browse filter.
                         .requestMatchers(HttpMethod.GET, "/api/product/v1/location/**").permitAll()
                         .anyRequest().authenticated())

@@ -2,10 +2,12 @@ package net.jemsit.auth.service.impl;
 
 import net.jemsit.auth.data.model.User;
 import net.jemsit.auth.data.repository.UserRepository;
+import net.jemsit.auth.dto.AgentContactResponseDTO;
 import net.jemsit.auth.dto.AgentResponseDTO;
 import net.jemsit.auth.dto.AgentUpdateRequestDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
 import net.jemsit.auth.mapper.AuthMapper;
+import net.jemsit.auth.service.TelegramUsernameChecker;
 import net.jemsit.auth.service.UserService;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.api.ProfileApi;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +33,23 @@ public class UserServiceImpl implements UserService {
     private final AuthMapper authMapper;
     private final ProfileApi profileApi;
 
+    private static final Set<String> STAFF =
+            Set.of(Roles.ADMIN.name(), Roles.MANAGER.name(), Roles.AGENT.name());
+
     @Override
     public UserDetailsResponseDTO getUserDetails() {
         return toDetails(currentUser());
+    }
+
+    /** Public: a deactivated agent or a client account has no contact to show. */
+    @Override
+    public AgentContactResponseDTO getAgentContact(Long id) {
+        String telegramUsername = userRepository.findById(id)
+                .filter(user -> !Boolean.TRUE.equals(user.getIsDeleted()))
+                .filter(user -> user.getAuthorities().stream().anyMatch(authority -> STAFF.contains(authority.getAuthority())))
+                .map(User::getTelegramUsername)
+                .orElse(null);
+        return new AgentContactResponseDTO(telegramUsername);
     }
 
     /**
@@ -52,6 +69,10 @@ public class UserServiceImpl implements UserService {
         user.setEmail(userDetails.email());
         if (userDetails.phoneNumber() != null) {
             user.setPhoneNumber(userDetails.phoneNumber().isBlank() ? null : userDetails.phoneNumber().trim());
+        }
+        // null leaves it as it is; an empty string clears it.
+        if (userDetails.telegramUsername() != null) {
+            user.setTelegramUsername(TelegramUsernameChecker.normalize(userDetails.telegramUsername()));
         }
 
         Pair<String, String> fullName = userDetails.fullName().split(" ").length > 1 ?
@@ -101,6 +122,9 @@ public class UserServiceImpl implements UserService {
         user.setUsername(username);
         user.setEmail(email);
         user.setPhoneNumber(phoneNumber.isEmpty() ? null : phoneNumber);
+        if (request.telegramUsername() != null) {
+            user.setTelegramUsername(TelegramUsernameChecker.normalize(request.telegramUsername()));
+        }
 
         ProfileRequestDTO profileRequest = new ProfileRequestDTO(
                 user.getProfileId(),
@@ -158,6 +182,7 @@ public class UserServiceImpl implements UserService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPhoneNumber() != null || profile == null ? user.getPhoneNumber() : profile.phoneNumber(),
+                user.getTelegramUsername(),
                 authMapper.mapAuthoritiesToRoles(user.getAuthorities()),
                 !Boolean.TRUE.equals(user.getIsDeleted()),
                 user.getCreatedAt(),

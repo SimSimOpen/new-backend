@@ -15,6 +15,8 @@ public interface ServiceListingService {
 
     ServiceListingResponseDTO getById(Long id);
 
+    ServiceListingResponseDTO getPublished(Long id);
+
     String deleteById(Long id);
 
     void requireEditable(Long id);

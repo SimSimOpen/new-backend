@@ -18,6 +18,8 @@ public interface CarService {
 
     CarResponseDTO getById(Long id);
 
+    CarResponseDTO getPublished(Long id);
+
     String deleteById(Long id);
 
     void requireEditable(Long id);

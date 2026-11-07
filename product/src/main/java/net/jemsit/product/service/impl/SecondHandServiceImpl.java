@@ -77,6 +77,15 @@ public class SecondHandServiceImpl implements SecondHandService {
     }
 
     @Override
+    public SecondHandResponseDTO getPublished(Long id) {
+        SecondHandItem listing = requireItem(id);
+        if (listing.getListingStatus() != ListingStatus.ACTIVE || Boolean.TRUE.equals(listing.getIsDeleted())) {
+            throw new UserException("Second-hand item not found with id: " + id);
+        }
+        return toDto(listing);
+    }
+
+    @Override
     @Transactional
     public String deleteById(Long id) {
         SecondHandItem item = requireOwnedItem(id);

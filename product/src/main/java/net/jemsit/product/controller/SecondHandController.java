@@ -63,6 +63,12 @@ public class SecondHandController {
         return ResponseEntity.ok(secondHandService.getStats());
     }
 
+    /** Public: a shared link opens a live listing whoever follows it; anything else is not found. */
+    @GetMapping("{id}/public")
+    public ResponseEntity<?> getPublished(@PathVariable Long id) {
+        return ResponseEntity.ok(secondHandService.getPublished(id));
+    }
+
     @PostMapping("{id}/views")
     public ResponseEntity<?> incrementViews(@PathVariable Long id) {
         return ResponseEntity.ok(secondHandService.incrementViews(id));

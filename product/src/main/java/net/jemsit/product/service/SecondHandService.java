@@ -15,6 +15,8 @@ public interface SecondHandService {
 
     SecondHandResponseDTO getById(Long id);
 
+    SecondHandResponseDTO getPublished(Long id);
+
     String deleteById(Long id);
 
     void requireEditable(Long id);

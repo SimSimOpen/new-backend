@@ -2,6 +2,7 @@ package net.jemsit.auth.service;
 
 import net.jemsit.auth.dto.AgentResponseDTO;
 import net.jemsit.auth.dto.AgentUpdateRequestDTO;
+import net.jemsit.auth.dto.AgentContactResponseDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
 import net.jemsit.common.dto.response.auth.UserDetailsResponseDTO;
 
@@ -9,6 +10,8 @@ import java.util.List;
 
 public interface UserService {
     UserDetailsResponseDTO getUserDetails();
+
+    AgentContactResponseDTO getAgentContact(Long id);
 
     UserDetailsResponseDTO updateUserDetails(UserDetailsRequestDTO userDetails);
 

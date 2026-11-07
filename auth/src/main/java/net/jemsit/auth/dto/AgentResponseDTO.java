@@ -11,6 +11,7 @@ public record AgentResponseDTO(
         String username,
         String email,
         String phoneNumber,
+        String telegramUsername,
         List<Roles> authorities,
         Boolean enabled,
         LocalDateTime createdAt,

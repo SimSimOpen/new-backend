@@ -84,6 +84,15 @@ public class CarServiceImpl implements CarService {
     }
 
     @Override
+    public CarResponseDTO getPublished(Long id) {
+        Car listing = requireCar(id);
+        if (listing.getListingStatus() != ListingStatus.ACTIVE || Boolean.TRUE.equals(listing.getIsDeleted())) {
+            throw new UserException("Car not found with id: " + id);
+        }
+        return toDto(listing);
+    }
+
+    @Override
     @Transactional
     public String deleteById(Long id) {
         Car car = requireOwnedCar(id);

@@ -5,6 +5,7 @@ public record UserDetailsRequestDTO(
         String email,
         String fullName,
         String phoneNumber,
-        String description
+        String description,
+        String telegramUsername
 ) {
 }

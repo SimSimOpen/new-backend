@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import net.jemsit.auth.dto.AgentUpdateRequestDTO;
 import net.jemsit.auth.dto.UserDetailsRequestDTO;
 import net.jemsit.auth.service.UserDashboardService;
+import net.jemsit.auth.service.TelegramUsernameChecker;
 import net.jemsit.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,22 @@ public class UserController {
 
     private final UserService userService;
     private final UserDashboardService userDashboardService;
+    private final TelegramUsernameChecker telegramUsernameChecker;
 
     @GetMapping("details")
     public ResponseEntity<?> getUserDetails() {
         return ResponseEntity.ok(userService.getUserDetails());
+    }
+
+    @GetMapping("agents/{id}/contact")
+    public ResponseEntity<?> getAgentContact(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getAgentContact(id));
+    }
+
+    @GetMapping("telegram/check")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER', 'AGENT')")
+    public ResponseEntity<?> checkTelegramUsername(@RequestParam String username) {
+        return ResponseEntity.ok(telegramUsernameChecker.check(username));
     }
 
     @PutMapping("update-user")

@@ -77,6 +77,15 @@ public class ServiceListingServiceImpl implements ServiceListingService {
     }
 
     @Override
+    public ServiceListingResponseDTO getPublished(Long id) {
+        ServiceListing listing = requireListing(id);
+        if (listing.getListingStatus() != ListingStatus.ACTIVE || Boolean.TRUE.equals(listing.getIsDeleted())) {
+            throw new UserException("Service listing not found with id: " + id);
+        }
+        return toDto(listing);
+    }
+
+    @Override
     @Transactional
     public String deleteById(Long id) {
         ServiceListing listing = requireOwnedListing(id);

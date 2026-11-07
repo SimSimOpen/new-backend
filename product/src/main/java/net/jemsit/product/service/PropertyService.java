@@ -16,6 +16,8 @@ public interface PropertyService {
 
     PropertyResponseDTO getById(Long id);
 
+    PropertyResponseDTO getPublished(Long id);
+
     String deleteById(Long id);
 
     PropertyResponseDTO addPropertyImage(AddPropertyImagesRequestDTO request, Long userId);

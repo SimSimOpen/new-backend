@@ -141,6 +141,15 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
+    public PropertyResponseDTO getPublished(Long id) {
+        Property listing = requireProperty(id);
+        if (listing.getListingStatus() != ListingStatus.ACTIVE || Boolean.TRUE.equals(listing.getIsDeleted())) {
+            throw new UserException("Property not found with id: " + id);
+        }
+        return propertyMapper.toDto(listing);
+    }
+
+    @Override
     @Transactional
     public String deleteById(Long id) {
         Property property = requireProperty(id);
