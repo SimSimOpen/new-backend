@@ -1,10 +1,13 @@
-FROM eclipse-temurin:21-jdk-jammy AS build
+# The official Gradle image ships Gradle itself, so the build never downloads a
+# distribution: the wrapper's URL redirects to GitHub Releases, and a GitHub outage
+# then broke every image build. Keep this tag in step with gradle-wrapper.properties
+# (Spring Boot 4.1's plugin needs Gradle 8.14+/9.x).
+FROM gradle:9.5.1-jdk21-jammy AS build
 WORKDIR /app
 
-# Build files first so this layer (and the Gradle distribution it downloads) is
-# reused until a dependency actually changes.
-COPY gradlew settings.gradle build.gradle lombok.config ./
-COPY gradle ./gradle
+# Build files first so this layer (plugin resolution) is reused until a build
+# file actually changes.
+COPY settings.gradle build.gradle lombok.config ./
 COPY auth/build.gradle auth/
 COPY common/build.gradle common/
 COPY media/build.gradle media/
@@ -12,12 +15,11 @@ COPY notification/build.gradle notification/
 COPY notify/build.gradle notify/
 COPY product/build.gradle product/
 COPY profile/build.gradle profile/
-RUN chmod +x gradlew && ./gradlew --no-daemon projects
+RUN gradle --no-daemon projects
 
 COPY . .
-# The wrapper, not a system gradle: Spring Boot 4.1's plugin needs Gradle 8.14+/9.x.
 # bootJar only, so build/libs holds exactly one jar.
-RUN ./gradlew --no-daemon clean bootJar -x test
+RUN gradle --no-daemon clean bootJar -x test
 
 
 FROM eclipse-temurin:21-jre-jammy

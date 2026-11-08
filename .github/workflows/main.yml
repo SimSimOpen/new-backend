@@ -15,6 +15,10 @@ jobs:
   ci:
     name: CI (Build)
     runs-on: ubuntu-latest
+    # Same image as the Dockerfile's build stage: JDK 21 plus Gradle preinstalled, so the
+    # build never downloads a Gradle distribution (those are served from GitHub Releases,
+    # and a GitHub outage broke every build). Keep the tag in step with the Dockerfile.
+    container: gradle:9.5.1-jdk21-jammy
     permissions:
       contents: read
 
@@ -22,17 +26,11 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
-      - name: Set up Gradle
+      - name: Cache Gradle dependencies
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build
-        run: ./gradlew clean build --no-daemon
+        run: gradle clean build --no-daemon
 
 
   docker:
