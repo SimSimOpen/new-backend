@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/v1/authenticate",
                                 "/api/auth/v1/firebase-login",
+                                "/api/auth/v1/refresh",
                                 "/api/event/send-otp",
                                 "/api/event/send-otp-telegram",
                                 "/api/event/verify-otp",

@@ -71,6 +71,9 @@ public class JwtFilter extends OncePerRequestFilter {
         if (header != null && header.startsWith("Bearer ")) {
             String jwt = header.substring(7);
             try {
+                if (jwtService.isRefreshToken(jwt)) {
+                    throw new TokenInvalidException("Refresh tokens cannot be used as access tokens");
+                }
                 String username = jwtService.extractUsername(jwt);
                 List<Roles> roles = jwtService.extractRoles(jwt);
                 Long userId = jwtService.extractUserId(jwt);

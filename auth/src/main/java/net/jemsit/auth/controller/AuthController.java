@@ -1,6 +1,7 @@
 package net.jemsit.auth.controller;
 
 import net.jemsit.auth.dto.FirebaseLoginRequestDTO;
+import net.jemsit.auth.dto.RefreshRequestDTO;
 import net.jemsit.auth.service.AuthService;
 import net.jemsit.auth.service.FirebaseTokenVerifier;
 import net.jemsit.common.dto.request.auth.AuthenticationRequestDTO;
@@ -24,6 +25,12 @@ public class AuthController {
     @PostMapping("authenticate")
     public ResponseEntity<?> authenticate(@RequestBody AuthenticationRequestDTO request) {
         return ResponseEntity.ok(authService.authenticate(request));
+    }
+
+    /** Public: the caller's access token has usually expired by the time it asks. */
+    @PostMapping("refresh")
+    public ResponseEntity<?> refresh(@RequestBody RefreshRequestDTO request) {
+        return ResponseEntity.ok(authService.refresh(request.refreshToken()));
     }
 
     @PostMapping("firebase-login")

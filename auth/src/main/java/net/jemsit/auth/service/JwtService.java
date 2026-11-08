@@ -20,8 +20,22 @@ import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
+    /** Marks a refresh token, so it can only buy new tokens and is never accepted as an access token. */
+    public static final String TYPE_CLAIM = "typ";
+    public static final String REFRESH_TYPE = "refresh";
+
     @Value("${jwt.secret}")
     private String SECRET_KEY;
+
+    @Value("${jwt.access-token-minutes:30}")
+    private long accessTokenMinutes;
+
+    /**
+     * Every refresh issues a new refresh token, so this is how long a signed-in user may stay away
+     * before having to sign in again; anyone who comes back sooner stays signed in indefinitely.
+     */
+    @Value("${jwt.refresh-token-days:90}")
+    private long refreshTokenDays;
 
     public <T> T extractClaims(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
@@ -72,6 +86,10 @@ public class JwtService {
         return value instanceof Number number ? number.longValue() : null;
     }
 
+    public boolean isRefreshToken(String token) {
+        return REFRESH_TYPE.equals(extractAllClaims(token).get(TYPE_CLAIM));
+    }
+
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         Set<String> userRoles = new HashSet<>();
@@ -84,9 +102,12 @@ public class JwtService {
     public String generateTokenWithExpireTime(Map<String, Object> extraClaims, User user) {
         return Jwts.builder()
                 .subject(user.getUsername())
+                // Unique per token: two issued in the same second would otherwise be identical,
+                // breaking refresh-token rotation and the unique columns in the tokens table.
+                .id(UUID.randomUUID().toString())
                 .claims(extraClaims)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30)) // 30 min
+                .expiration(new Date(System.currentTimeMillis() + accessTokenMinutes * 60_000L))
                 .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
@@ -94,9 +115,13 @@ public class JwtService {
     public String generateRefreshToken(Map<String, Object> extraClaims, User user) {
         return Jwts.builder()
                 .subject(user.getUsername())
+                // Unique per token: two issued in the same second would otherwise be identical,
+                // breaking refresh-token rotation and the unique columns in the tokens table.
+                .id(UUID.randomUUID().toString())
                 .claims(extraClaims)
+                .claim(TYPE_CLAIM, REFRESH_TYPE)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 5)) // 5 hours
+                .expiration(new Date(System.currentTimeMillis() + refreshTokenDays * 86_400_000L))
                 .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }

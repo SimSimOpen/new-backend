@@ -14,4 +14,7 @@ public interface AuthService {
     void registerAdmin(RegisterRequestDTO request);
 
     AuthenticationResponseDTO authenticateWithOtp(AuthenticationRequestDTO request);
+
+    /** Swaps a valid refresh token for a new access and refresh token pair. */
+    AuthenticationResponseDTO refresh(String refreshToken);
 }

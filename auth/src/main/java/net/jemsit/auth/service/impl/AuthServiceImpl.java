@@ -2,6 +2,7 @@ package net.jemsit.auth.service.impl;
 
 import net.jemsit.auth.data.model.Token;
 import net.jemsit.auth.data.model.User;
+import net.jemsit.auth.data.repository.TokenRepository;
 import net.jemsit.auth.data.repository.UserRepository;
 import net.jemsit.auth.mapper.AuthMapper;
 import net.jemsit.auth.service.AuthService;
@@ -14,6 +15,7 @@ import net.jemsit.common.dto.request.auth.ProfileRequestDTO;
 import net.jemsit.common.dto.request.auth.RegisterRequestDTO;
 import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
 import net.jemsit.common.dto.response.auth.ProfileResponseDTO;
+import net.jemsit.common.exceptions.TokenInvalidException;
 import net.jemsit.common.exceptions.UserException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -31,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthMapper authMapper;
     private final ProfileApi profileApi;
@@ -137,6 +140,27 @@ public class AuthServiceImpl implements AuthService {
             existing.setUpdatedAt(LocalDateTime.now());
             return authMapper.toDTO(userRepository.saveAndFlush(existing), tokenModel);
         }
+    }
+
+    /**
+     * The refresh token is rotated: the stored pair is replaced, so each refresh token works once and
+     * a stolen one stops working as soon as the real user refreshes. Deleting a user's rows in
+     * {@code tokens} signs them out everywhere.
+     */
+    @Transactional
+    @Override
+    public AuthenticationResponseDTO refresh(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank() || !jwtService.isRefreshToken(refreshToken)) {
+            throw new TokenInvalidException("Refresh token is invalid");
+        }
+        Token stored = tokenRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new TokenInvalidException("Refresh token is invalid"));
+        User user = stored.getUser();
+        requireActive(user);
+        stored.setToken(jwtService.generateToken(user));
+        stored.setRefreshToken(jwtService.generateRefreshToken(user));
+        tokenRepository.saveAndFlush(stored);
+        return authMapper.toDTO(user, stored);
     }
 
     /**
