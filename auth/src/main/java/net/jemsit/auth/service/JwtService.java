@@ -86,6 +86,15 @@ public class JwtService {
         return value instanceof Number number ? number.longValue() : null;
     }
 
+    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+
+    /** 64 random bits, base64url: unique enough per user and second, and short, unlike a UUID. */
+    private static String newTokenId() {
+        byte[] bytes = new byte[8];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
     public boolean isRefreshToken(String token) {
         return REFRESH_TYPE.equals(extractAllClaims(token).get(TYPE_CLAIM));
     }
@@ -104,7 +113,7 @@ public class JwtService {
                 .subject(user.getUsername())
                 // Unique per token: two issued in the same second would otherwise be identical,
                 // breaking refresh-token rotation and the unique columns in the tokens table.
-                .id(UUID.randomUUID().toString())
+                .id(newTokenId())
                 .claims(extraClaims)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + accessTokenMinutes * 60_000L))
@@ -117,7 +126,7 @@ public class JwtService {
                 .subject(user.getUsername())
                 // Unique per token: two issued in the same second would otherwise be identical,
                 // breaking refresh-token rotation and the unique columns in the tokens table.
-                .id(UUID.randomUUID().toString())
+                .id(newTokenId())
                 .claims(extraClaims)
                 .claim(TYPE_CLAIM, REFRESH_TYPE)
                 .issuedAt(new Date(System.currentTimeMillis()))

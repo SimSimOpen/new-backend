@@ -143,9 +143,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * The refresh token is rotated: the stored pair is replaced, so each refresh token works once and
-     * a stolen one stops working as soon as the real user refreshes. Deleting a user's rows in
-     * {@code tokens} signs them out everywhere.
+     * The refresh token is rotated, so every refresh pushes its 90-day expiry forward. The token it
+     * replaced stays valid until the next rotation: presenting it hands back the current refresh
+     * token instead of rotating again, so a lost response cannot sign anyone out. Deleting a user's
+     * rows in {@code tokens} signs them out everywhere.
      */
     @Transactional
     @Override
@@ -153,12 +154,17 @@ public class AuthServiceImpl implements AuthService {
         if (refreshToken == null || refreshToken.isBlank() || !jwtService.isRefreshToken(refreshToken)) {
             throw new TokenInvalidException("Refresh token is invalid");
         }
-        Token stored = tokenRepository.findByRefreshToken(refreshToken)
+        Optional<Token> current = tokenRepository.findByRefreshToken(refreshToken);
+        Token stored = current
+                .or(() -> tokenRepository.findByPreviousRefreshToken(refreshToken))
                 .orElseThrow(() -> new TokenInvalidException("Refresh token is invalid"));
         User user = stored.getUser();
         requireActive(user);
         stored.setToken(jwtService.generateToken(user));
-        stored.setRefreshToken(jwtService.generateRefreshToken(user));
+        if (current.isPresent()) {
+            stored.setPreviousRefreshToken(refreshToken);
+            stored.setRefreshToken(jwtService.generateRefreshToken(user));
+        }
         tokenRepository.saveAndFlush(stored);
         return authMapper.toDTO(user, stored);
     }
