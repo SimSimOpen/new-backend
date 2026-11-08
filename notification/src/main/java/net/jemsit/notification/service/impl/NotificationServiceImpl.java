@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jemsit.common.api.AuthApi;
 import net.jemsit.common.dto.message.MediaFromMobileStarted;
+import net.jemsit.common.dto.message.ChatEvent;
 import net.jemsit.common.dto.message.MediaUploaded;
 import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
 import net.jemsit.notification.service.NotificationService;
@@ -72,6 +73,13 @@ public class NotificationServiceImpl implements NotificationService {
     @EventListener
     public void onMediaFromMobileStarted(MediaFromMobileStarted event) {
         notifyUser(event.getUserId(), event.getMessage().getMessage());
+    }
+
+    /** Chat messages go to every open tab of both participants; nothing is queued for offline users. */
+    @EventListener
+    public void onChatEvent(ChatEvent event) {
+        event.recipientIds().stream().distinct().forEach(userId ->
+                sseEmitterRegistry.sendEvent(String.valueOf(userId), "chat", event.payload()));
     }
 
     private void notifyUser(String userId, String message) {

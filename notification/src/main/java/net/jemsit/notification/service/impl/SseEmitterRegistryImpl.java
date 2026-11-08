@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import net.jemsit.notification.service.SseEmitterRegistry;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -71,6 +72,16 @@ public class SseEmitterRegistryImpl implements SseEmitterRegistry {
         log.info("Sending notification to user {}: {}", userId, message);
         userEmitters.forEach(emitter ->
                 send(emitter, SseEmitter.event().name("media-notification").data(message)));
+    }
+
+    @Override
+    public void sendEvent(String userId, String eventName, Object data) {
+        List<SseEmitter> userEmitters = emitters.get(userId);
+        if (userEmitters == null || userEmitters.isEmpty()) {
+            return;
+        }
+        userEmitters.forEach(emitter ->
+                send(emitter, SseEmitter.event().name(eventName).data(data, MediaType.APPLICATION_JSON)));
     }
 
     @Override
