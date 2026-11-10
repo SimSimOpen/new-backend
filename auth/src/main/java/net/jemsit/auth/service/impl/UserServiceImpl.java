@@ -44,12 +44,15 @@ public class UserServiceImpl implements UserService {
     /** Public: a deactivated agent or a client account has no contact to show. */
     @Override
     public AgentContactResponseDTO getAgentContact(Long id) {
-        String telegramUsername = userRepository.findById(id)
+        return userRepository.findById(id)
                 .filter(user -> !Boolean.TRUE.equals(user.getIsDeleted()))
                 .filter(user -> user.getAuthorities().stream().anyMatch(authority -> STAFF.contains(authority.getAuthority())))
-                .map(User::getTelegramUsername)
-                .orElse(null);
-        return new AgentContactResponseDTO(telegramUsername);
+                .map(user -> {
+                    ProfileResponseDTO profile = findProfile(user.getProfileId());
+                    return new AgentContactResponseDTO(user.getTelegramUsername(),
+                            profile == null ? null : profile.profileImageUrl());
+                })
+                .orElse(new AgentContactResponseDTO(null, null));
     }
 
     /**
