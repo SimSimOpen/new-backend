@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jemsit.common.api.AuthApi;
 import net.jemsit.common.dto.message.MediaFromMobileStarted;
+import net.jemsit.common.dto.message.BookingEvent;
 import net.jemsit.common.dto.message.ChatEvent;
 import net.jemsit.common.dto.message.MediaUploaded;
 import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
@@ -80,6 +81,13 @@ public class NotificationServiceImpl implements NotificationService {
     public void onChatEvent(ChatEvent event) {
         event.recipientIds().stream().distinct().forEach(userId ->
                 sseEmitterRegistry.sendEvent(String.valueOf(userId), "chat", event.payload()));
+    }
+
+    /** Booking changes go to the agent and the client; the mobile app refreshes its lists on them. */
+    @EventListener
+    public void onBookingEvent(BookingEvent event) {
+        event.recipientIds().stream().distinct().forEach(userId ->
+                sseEmitterRegistry.sendEvent(String.valueOf(userId), "booking", event.payload()));
     }
 
     private void notifyUser(String userId, String message) {

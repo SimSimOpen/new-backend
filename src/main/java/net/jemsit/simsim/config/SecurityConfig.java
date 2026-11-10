@@ -81,6 +81,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/product/v1/category/**").permitAll()
                         // The Telegram username behind a listing's contact button.
                         .requestMatchers(HttpMethod.GET, "/api/auth/v1/agents/*/contact").permitAll()
+                        // A service's working hours and free slots are shown before signing in.
+                        .requestMatchers(HttpMethod.GET, "/api/product/v1/booking/schedule/*",
+                                "/api/product/v1/booking/slots/*").permitAll()
                         // Read-only lookup lists (regions/districts/places) for the public browse filter.
                         .requestMatchers(HttpMethod.GET, "/api/product/v1/location/**").permitAll()
                         .anyRequest().authenticated())
