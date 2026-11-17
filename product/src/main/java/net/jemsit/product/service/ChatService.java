@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.api.AuthApi;
+import net.jemsit.common.data.enums.Roles;
 import net.jemsit.common.dto.message.ChatEvent;
 import net.jemsit.common.dto.response.auth.ProfileResponseDTO;
 import net.jemsit.common.dto.response.auth.UserDetailsResponseDTO;
@@ -35,9 +36,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Chats between a signed-in user and the agent of a listing, one conversation per user and listing.
- * Every endpoint acts as the caller in {@link UserContext}; a conversation is visible only to its two
- * participants. New messages are pushed to both of them through the notification module's SSE stream.
+ * Chats between a signed-in user and the agent of a listing, one conversation per user and listing,
+ * plus one support conversation per user with the SimSim admins ({@code kind = 'SUPPORT'},
+ * {@code listing_id = 0}, {@code agent_id = 0}): every ADMIN can read and answer those, and they
+ * share one read marker. Every endpoint acts as the caller in {@link UserContext}; a listing
+ * conversation is visible only to its two participants. New messages are pushed to everyone in the
+ * conversation through the notification module's SSE stream.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,6 +50,11 @@ public class ChatService {
 
     private static final int PAGE_SIZE = 50;
     private static final int MAX_CONVERSATIONS = 100;
+    /** {@code kind} of a support conversation; it has no listing and no single agent. */
+    private static final String SUPPORT = "SUPPORT";
+    /** Who may open a conversation: its two participants, and any admin for support ones. */
+    private static final String VISIBLE =
+            "(c.client_id = :me OR c.agent_id = :me OR (CAST(:admin AS boolean) AND c.kind = '" + SUPPORT + "'))";
 
     /** Titles stay readable after a listing is deleted, so deleted rows are included here. */
     private static final String LISTINGS = Arrays.stream(ListingKind.values())
@@ -105,22 +114,45 @@ public class ChatService {
         return get(id);
     }
 
+    /**
+     * Opens the caller's conversation with the SimSim admins, creating it on first use. Like listing
+     * chats, admins see it only once it has a message.
+     */
+    @Transactional
+    public ConversationDTO startSupport() {
+        Long me = requireUser();
+        if (isAdmin()) {
+            throw new UserException("Admins answer support chats from their inbox");
+        }
+        MapSqlParameterSource params = new MapSqlParameterSource("me", me).addValue("kind", SUPPORT);
+        jdbc.update("""
+                INSERT INTO chat_conversations (kind, listing_id, client_id, agent_id, created_at, client_read_id, agent_read_id)
+                VALUES (:kind, 0, :me, 0, now(), 0, 0)
+                ON CONFLICT (kind, listing_id, client_id) DO NOTHING""", params);
+        Long id = jdbc.queryForObject("""
+                SELECT id FROM chat_conversations WHERE kind = :kind AND listing_id = 0 AND client_id = :me""",
+                params, Long.class);
+        return get(id);
+    }
+
     /** The caller's conversations, most recently active first. */
     @Transactional(readOnly = true)
     public List<ConversationDTO> list() {
         Long me = requireUser();
         return toDtos(jdbc.queryForList(CONVERSATIONS + """
-                WHERE c.client_id = :me OR (c.agent_id = :me AND c.last_message_at IS NOT NULL)
+                WHERE c.client_id = :me
+                   OR ((c.agent_id = :me OR (CAST(:admin AS boolean) AND c.kind = :support))
+                       AND c.last_message_at IS NOT NULL)
                 ORDER BY COALESCE(c.last_message_at, c.created_at) DESC, c.id DESC
-                LIMIT""" + " " + MAX_CONVERSATIONS, new MapSqlParameterSource("me", me)), me);
+                LIMIT""" + " " + MAX_CONVERSATIONS, caller(me).addValue("support", SUPPORT)), me);
     }
 
     @Transactional(readOnly = true)
     public ConversationDTO get(Long conversationId) {
         Long me = requireUser();
         List<ConversationDTO> found = toDtos(jdbc.queryForList(CONVERSATIONS
-                        + " WHERE c.id = :id AND (c.client_id = :me OR c.agent_id = :me)",
-                new MapSqlParameterSource().addValue("id", conversationId).addValue("me", me)), me);
+                        + " WHERE c.id = :id AND " + VISIBLE,
+                caller(me).addValue("id", conversationId)), me);
         if (found.isEmpty()) {
             throw new UserException("Conversation not found");
         }
@@ -161,8 +193,16 @@ public class ChatService {
         jdbc.update("UPDATE chat_conversations SET last_message_at = now(), "
                         + readColumn(p.myRole()) + " = :messageId WHERE id = :id",
                 new MapSqlParameterSource().addValue("id", conversationId).addValue("messageId", message.id()));
-        // Both sides get the event: the other participant, and the sender's other open tabs.
-        publishAfterCommit(new ChatEvent(List.of(p.clientId(), p.agentId()), ChatEventPayload.message(message)));
+        // Both sides get the event: the other participant, and the sender's other open tabs. A support
+        // message goes to every admin, so whoever is online (web or the app) sees it at once.
+        List<Long> recipients = new ArrayList<>();
+        recipients.add(p.clientId());
+        if (p.support()) {
+            recipients.addAll(authApi.adminIds());
+        } else {
+            recipients.add(p.agentId());
+        }
+        publishAfterCommit(new ChatEvent(recipients, ChatEventPayload.message(message)));
         return message;
     }
 
@@ -181,9 +221,10 @@ public class ChatService {
         Long me = requireUser();
         Long count = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM chat_messages x JOIN chat_conversations c ON c.id = x.conversation_id
-                WHERE (c.client_id = :me OR c.agent_id = :me) AND x.sender_id <> :me
+                WHERE""" + " " + VISIBLE + """
+                  AND x.sender_id <> :me
                   AND x.id > CASE WHEN c.client_id = :me THEN c.client_read_id ELSE c.agent_read_id END""",
-                new MapSqlParameterSource("me", me), Long.class);
+                caller(me), Long.class);
         return count == null ? 0 : count;
     }
 
@@ -192,16 +233,19 @@ public class ChatService {
         List<ConversationDTO> result = new ArrayList<>(rows.size());
         for (Map<String, Object> row : rows) {
             Long clientId = ((Number) row.get("client_id")).longValue();
+            boolean support = SUPPORT.equals(row.get("kind"));
             ChatRole role = clientId.equals(me) ? ChatRole.CLIENT : ChatRole.AGENT;
+            // The client of a support chat talks to "SimSim support"; the apps show that label.
             String counterpart = role == ChatRole.CLIENT
-                    ? (String) row.get("agent_name")
+                    ? (support ? null : (String) row.get("agent_name"))
                     : clientNames.computeIfAbsent(clientId, this::displayName);
             Number lastSender = (Number) row.get("last_sender");
             result.add(new ConversationDTO(
                     ((Number) row.get("id")).longValue(),
-                    ListingKind.valueOf((String) row.get("kind")),
-                    ((Number) row.get("listing_id")).longValue(),
-                    (String) row.get("listing_title"),
+                    support,
+                    support ? null : ListingKind.valueOf((String) row.get("kind")),
+                    support ? null : ((Number) row.get("listing_id")).longValue(),
+                    support ? null : (String) row.get("listing_title"),
                     role,
                     counterpart,
                     (String) row.get("last_body"),
@@ -234,11 +278,11 @@ public class ChatService {
 
     private Participants requireParticipant(Long conversationId) {
         Long me = requireUser();
-        List<Participants> found = jdbc.query("""
-                        SELECT client_id, agent_id FROM chat_conversations
-                        WHERE id = :id AND (client_id = :me OR agent_id = :me)""",
-                new MapSqlParameterSource().addValue("id", conversationId).addValue("me", me),
-                (rs, i) -> new Participants(me, rs.getLong("client_id"), rs.getLong("agent_id")));
+        List<Participants> found = jdbc.query(
+                "SELECT c.client_id, c.agent_id, c.kind FROM chat_conversations c WHERE c.id = :id AND " + VISIBLE,
+                caller(me).addValue("id", conversationId),
+                (rs, i) -> new Participants(me, rs.getLong("client_id"), rs.getLong("agent_id"),
+                        SUPPORT.equals(rs.getString("kind"))));
         if (found.isEmpty()) {
             throw new UserException("Conversation not found");
         }
@@ -275,6 +319,15 @@ public class ChatService {
         return role == ChatRole.CLIENT ? "client_read_id" : "agent_read_id";
     }
 
+    private static MapSqlParameterSource caller(Long me) {
+        return new MapSqlParameterSource("me", me).addValue("admin", isAdmin());
+    }
+
+    private static boolean isAdmin() {
+        List<Roles> roles = UserContext.getRoles();
+        return roles != null && roles.contains(Roles.ADMIN);
+    }
+
     private static Long requireUser() {
         Long me = UserContext.getUserId();
         if (me == null) {
@@ -283,7 +336,7 @@ public class ChatService {
         return me;
     }
 
-    private record Participants(Long me, long clientId, long agentId) {
+    private record Participants(Long me, long clientId, long agentId, boolean support) {
         ChatRole myRole() {
             return me == clientId ? ChatRole.CLIENT : ChatRole.AGENT;
         }

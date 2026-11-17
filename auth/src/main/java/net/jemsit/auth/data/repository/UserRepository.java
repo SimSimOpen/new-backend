@@ -40,6 +40,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
             """, nativeQuery = true)
     Optional<User> findOtpAccount(@Param("username") String username, @Param("digits") String digits);
 
+    @Query(value = "SELECT u.id FROM users u WHERE u.is_deleted = false AND 'ADMIN' = ANY(u.authorities)",
+            nativeQuery = true)
+    List<Long> findActiveAdminIds();
+
     boolean existsByUsernameAndIdNot(String username, Long id);
 
     boolean existsByEmailAndIdNot(String email, Long id);

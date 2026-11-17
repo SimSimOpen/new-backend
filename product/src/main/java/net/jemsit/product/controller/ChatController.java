@@ -27,6 +27,12 @@ public class ChatController {
         return ResponseEntity.ok(chatService.start(request.kind(), request.listingId()));
     }
 
+    /** The caller's conversation with the SimSim admins ("Talk to admin"). */
+    @PostMapping("support")
+    public ResponseEntity<?> startSupport() {
+        return ResponseEntity.ok(chatService.startSupport());
+    }
+
     @GetMapping("conversations")
     public ResponseEntity<?> list() {
         return ResponseEntity.ok(chatService.list());

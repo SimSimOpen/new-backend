@@ -12,6 +12,8 @@ import net.jemsit.common.exceptions.UserException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AuthApiImpl implements AuthApi {
@@ -36,6 +38,11 @@ public class AuthApiImpl implements AuthApi {
     public AuthenticationResponseDTO authenticateWithOtp(String phoneNumber) {
         // the caller has already validated the one-time code, and AuthService ignores the password here
         return authService.authenticateWithOtp(new AuthenticationRequestDTO(phoneNumber, null));
+    }
+
+    @Override
+    public List<Long> adminIds() {
+        return userRepository.findActiveAdminIds();
     }
 
     private User requireUser(Long id) {
