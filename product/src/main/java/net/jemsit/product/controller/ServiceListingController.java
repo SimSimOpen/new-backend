@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.dto.request.product.services.ServiceListingFilterRequestDTO;
 import net.jemsit.common.dto.request.product.services.ServiceListingRequestDTO;
+import net.jemsit.product.service.ListingOwnerResolver;
 import net.jemsit.product.service.ServiceListingService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +18,11 @@ public class ServiceListingController {
 
     private final ServiceListingService serviceListingService;
 
+    private final ListingOwnerResolver listingOwnerResolver;
+
     @PostMapping("create-draft")
-    public ResponseEntity<?> createDraft() {
-        return ResponseEntity.ok(serviceListingService.createDraft(UserContext.getUserId()));
+    public ResponseEntity<?> createDraft(@RequestParam(required = false) Long agentId) {
+        return ResponseEntity.ok(serviceListingService.createDraft(listingOwnerResolver.resolve(agentId)));
     }
 
     @PutMapping("update/{id}")

@@ -6,6 +6,7 @@ import net.jemsit.common.UserContext;
 import net.jemsit.common.dto.request.product.property.AddPropertyImagesRequestDTO;
 import net.jemsit.common.dto.request.product.property.PropertyFilterRequestDTO;
 import net.jemsit.common.dto.request.product.property.PropertyRequestDTO;
+import net.jemsit.product.service.ListingOwnerResolver;
 import net.jemsit.product.service.PropertyFilterService;
 import net.jemsit.product.service.PropertyService;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 public class PropertyController {
 
     private final PropertyService propertyService;
+
+    private final ListingOwnerResolver listingOwnerResolver;
     private final PropertyFilterService propertyFilterService;
 
     @PostMapping("add")
@@ -31,8 +34,8 @@ public class PropertyController {
     }
 
     @PostMapping("create-draft")
-    public ResponseEntity<?> createPropertyDraft() {
-        return ResponseEntity.ok(propertyService.createPropertyDraft(UserContext.getUserId()));
+    public ResponseEntity<?> createPropertyDraft(@RequestParam(required = false) Long agentId) {
+        return ResponseEntity.ok(propertyService.createPropertyDraft(listingOwnerResolver.resolve(agentId)));
     }
 
     @PostMapping(value = "add/images")

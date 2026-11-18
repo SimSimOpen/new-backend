@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.dto.request.product.secondhand.SecondHandFilterRequestDTO;
 import net.jemsit.common.dto.request.product.secondhand.SecondHandRequestDTO;
+import net.jemsit.product.service.ListingOwnerResolver;
 import net.jemsit.product.service.SecondHandService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +18,11 @@ public class SecondHandController {
 
     private final SecondHandService secondHandService;
 
+    private final ListingOwnerResolver listingOwnerResolver;
+
     @PostMapping("create-draft")
-    public ResponseEntity<?> createDraft() {
-        return ResponseEntity.ok(secondHandService.createDraft(UserContext.getUserId()));
+    public ResponseEntity<?> createDraft(@RequestParam(required = false) Long agentId) {
+        return ResponseEntity.ok(secondHandService.createDraft(listingOwnerResolver.resolve(agentId)));
     }
 
     @PutMapping("update/{id}")

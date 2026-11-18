@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.dto.request.product.car.CarFilterRequestDTO;
 import net.jemsit.common.dto.request.product.car.CarRequestDTO;
+import net.jemsit.product.service.ListingOwnerResolver;
 import net.jemsit.product.service.CarService;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +18,11 @@ public class CarController {
 
     private final CarService carService;
 
+    private final ListingOwnerResolver listingOwnerResolver;
+
     @PostMapping("create-draft")
-    public ResponseEntity<?> createDraft() {
-        return ResponseEntity.ok(carService.createDraft(UserContext.getUserId()));
+    public ResponseEntity<?> createDraft(@RequestParam(required = false) Long agentId) {
+        return ResponseEntity.ok(carService.createDraft(listingOwnerResolver.resolve(agentId)));
     }
 
     @PutMapping("update/{id}")
