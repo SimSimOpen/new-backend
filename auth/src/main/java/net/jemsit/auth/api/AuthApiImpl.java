@@ -41,6 +41,18 @@ public class AuthApiImpl implements AuthApi {
     }
 
     @Override
+    public String phoneNumber(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return userRepository.findById(id)
+                .filter(user -> !Boolean.TRUE.equals(user.getIsDeleted()))
+                .map(User::getPhoneNumber)
+                .filter(phone -> !phone.isBlank())
+                .orElse(null);
+    }
+
+    @Override
     public List<Long> adminIds() {
         return userRepository.findActiveAdminIds();
     }

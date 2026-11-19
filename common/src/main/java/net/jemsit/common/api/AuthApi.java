@@ -13,6 +13,9 @@ public interface AuthApi {
 
     AuthenticationResponseDTO authenticateWithOtp(String phoneNumber);
 
+    /** The account's phone number, or null when it has none or the account is gone or deleted. */
+    String phoneNumber(Long id);
+
     /** Ids of the active ADMIN accounts: they all receive support chat messages. */
     List<Long> adminIds();
 }

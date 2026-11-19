@@ -19,8 +19,6 @@ public record SecondHandRequestDTO(
         ListingStatus listingStatus,
         /** AVAILABLE or SOLD; a null leaves the stored value untouched. */
         OccupancyStatus occupancyStatus,
-
-        String ownerContact,
         Long regionId,
         Long districtId,
         Long placeId,

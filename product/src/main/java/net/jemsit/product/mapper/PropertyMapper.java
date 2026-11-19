@@ -10,6 +10,7 @@ import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
@@ -22,12 +23,17 @@ public abstract class PropertyMapper {
     @Value("${minio.endpoint}")
     private String minioEndpoint;
 
+    // The phone on a listing is always the current one of the agent who owns it.
+    @Autowired
+    protected AgentPhones agentPhones;
+
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "deletedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "agentID", ignore = true)
     @Mapping(target = "agent", ignore = true)
+    @Mapping(target = "ownerOrAgentContact", ignore = true)
     public abstract Property toEntity(PropertyRequestDTO resident);
 
     // The response DTO exposes coordinates flat, and clients echo that shape back, so the generated
@@ -52,12 +58,14 @@ public abstract class PropertyMapper {
 
     @Mapping(target = "medias", expression = "java(mapMedia(property.getMedias()))")
     @Mapping(target = "location", ignore = true)
+    @Mapping(target = "ownerContact", expression = "java(agentPhones.of(property.getAgentID()))")
     @Mapping(target = "latitude", source = "location.latitude")
     @Mapping(target = "longitude", source = "location.longitude")
     public abstract PropertyResponseDTO toDto(Property property);
 
     @Mapping(target = "medias", expression = "java(mapMedia(property.getMedias()))")
     @Mapping(target = "location", source = "shortAddress")
+    @Mapping(target = "ownerContact", expression = "java(agentPhones.of(property.getAgentID()))")
     @Mapping(target = "amenities", source = "property.amenities")
     @Mapping(target = "latitude", source = "property.location.latitude")
     @Mapping(target = "longitude", source = "property.location.longitude")

@@ -28,8 +28,6 @@ public record CarRequestDTO(
         OfferType offerType,
         ListingStatus listingStatus,
         OccupancyStatus occupancyStatus,
-
-        String ownerContact,
         Long regionId,
         Long districtId,
         Long placeId,

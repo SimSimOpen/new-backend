@@ -20,7 +20,6 @@ public record ServiceListingRequestDTO(
         /** OFFERING (I provide this) or SEEKING (I need this). */
         ServiceKind kind,
         ListingStatus listingStatus,
-        String ownerContact,
         Long regionId,
         Long districtId,
         Long placeId,

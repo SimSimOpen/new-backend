@@ -6,6 +6,7 @@ import net.jemsit.common.dto.response.product.secondhand.SecondHandResponseDTO;
 import net.jemsit.product.data.model.secondhand.SecondHandItem;
 import net.jemsit.product.data.model.secondhand.SecondHandMediaData;
 import org.mapstruct.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
@@ -16,9 +17,12 @@ public abstract class SecondHandMapper {
     @Value("${minio.endpoint}")
     private String minioEndpoint;
 
+    @Autowired
+    protected AgentPhones agentPhones;
+
     // Partial update: drafts are saved field by field, so a null in the request means "unchanged".
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "ownerOrAgentContact", source = "ownerContact")
+    @Mapping(target = "ownerOrAgentContact", ignore = true)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "viewCount", ignore = true)
     @Mapping(target = "agent", ignore = true)
@@ -30,7 +34,8 @@ public abstract class SecondHandMapper {
     @Mapping(target = "deletedAt", ignore = true)
     public abstract void update(SecondHandRequestDTO request, @MappingTarget SecondHandItem item);
 
-    @Mapping(target = "ownerContact", source = "item.ownerOrAgentContact")
+    // The phone on a listing is always the current one of the agent who owns it.
+    @Mapping(target = "ownerContact", expression = "java(agentPhones.of(item.getAgentID()))")
     @Mapping(target = "medias", expression = "java(mapMedia(item.getMedias()))")
     @Mapping(target = "location", source = "shortAddress")
     public abstract SecondHandResponseDTO toDto(SecondHandItem item, List<String> shortAddress);

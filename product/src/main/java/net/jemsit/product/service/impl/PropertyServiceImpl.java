@@ -89,9 +89,6 @@ public class PropertyServiceImpl implements PropertyService {
         if (request.totalFloors() != null) {
             toUpdate.setTotalFloors(request.totalFloors());
         }
-        if (request.ownerContact() != null && !request.ownerContact().isEmpty()) {
-            toUpdate.setOwnerOrAgentContact(request.ownerContact());
-        }
         if (request.offerType() != null) {
             toUpdate.setOfferType(request.offerType());
         }

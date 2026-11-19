@@ -22,7 +22,6 @@ public record PropertyRequestDTO(
         OccupancyStatus occupancyStatus,
 
         PropertyAmenities amenities,
-        String ownerContact,
         String agent,
         Long agentID,
         PropertyLocation location,
