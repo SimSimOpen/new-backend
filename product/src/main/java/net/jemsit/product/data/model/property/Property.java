@@ -19,6 +19,9 @@ public class Property extends BaseEntity {
     private String title;
     private String description;
     private BigDecimal price;
+    /** The same price in so'm, entered by the agent alongside {@code price} (USD); either may be null. */
+    @Column(name = "price_uzs")
+    private BigDecimal priceUzs;
     private Integer numberOfRooms;
     private Integer floor;
     private Integer totalFloors;

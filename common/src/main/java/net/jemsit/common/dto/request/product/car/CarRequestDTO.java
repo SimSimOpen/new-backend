@@ -11,6 +11,7 @@ public record CarRequestDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
 
         String brand,
         String model,

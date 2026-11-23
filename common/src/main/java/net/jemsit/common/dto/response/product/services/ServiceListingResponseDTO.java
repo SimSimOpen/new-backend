@@ -16,6 +16,7 @@ public record ServiceListingResponseDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
         PriceMode priceMode,
         @JsonProperty("views") long viewCount,
 

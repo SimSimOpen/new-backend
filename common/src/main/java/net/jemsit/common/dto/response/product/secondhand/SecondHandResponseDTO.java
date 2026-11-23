@@ -17,6 +17,7 @@ public record SecondHandResponseDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
         @JsonProperty("views") long viewCount,
 
         SecondHandCategory subCategory,

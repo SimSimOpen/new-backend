@@ -77,6 +77,9 @@ public class PropertyServiceImpl implements PropertyService {
         if (request.price() != null) {
             toUpdate.setPrice(request.price());
         }
+        if (request.priceUzs() != null) {
+            toUpdate.setPriceUzs(request.priceUzs());
+        }
         if (request.numberOfRooms() != null) {
             toUpdate.setNumberOfRooms(request.numberOfRooms());
         }

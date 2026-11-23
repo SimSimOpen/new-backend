@@ -15,6 +15,7 @@ public record ServiceListingRequestDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
         PriceMode priceMode,
         ServiceCategory category,
         /** OFFERING (I provide this) or SEEKING (I need this). */

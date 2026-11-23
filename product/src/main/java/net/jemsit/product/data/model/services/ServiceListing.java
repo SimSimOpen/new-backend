@@ -30,6 +30,9 @@ public class ServiceListing extends BaseEntity {
     private String description;
     /** The quote for an OFFERING, the budget for a SEEKING; null together with NEGOTIABLE means "make me an offer". */
     private BigDecimal price;
+    /** The same price in so'm, entered by the agent alongside {@code price} (USD); either may be null. */
+    @Column(name = "price_uzs")
+    private BigDecimal priceUzs;
     @Enumerated(EnumType.STRING)
     @Column(name = "price_mode")
     private PriceMode priceMode;

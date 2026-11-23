@@ -13,6 +13,7 @@ public record PropertyResponseDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
         Integer numberOfRooms,
         Double area,
         Integer floor,

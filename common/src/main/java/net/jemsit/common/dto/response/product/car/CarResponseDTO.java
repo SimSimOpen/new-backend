@@ -16,6 +16,7 @@ public record CarResponseDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
         @JsonProperty("views") long viewCount,
 
         String brand,

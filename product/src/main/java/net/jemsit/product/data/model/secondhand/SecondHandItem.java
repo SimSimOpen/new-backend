@@ -28,6 +28,9 @@ public class SecondHandItem extends BaseEntity {
     @Column(columnDefinition = "text")
     private String description;
     private BigDecimal price;
+    /** The same price in so'm, entered by the agent alongside {@code price} (USD); either may be null. */
+    @Column(name = "price_uzs")
+    private BigDecimal priceUzs;
     @Column(name = "view_count", nullable = false, columnDefinition = "bigint default 0")
     private long viewCount;
 

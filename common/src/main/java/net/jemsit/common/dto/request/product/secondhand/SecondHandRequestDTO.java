@@ -12,6 +12,7 @@ public record SecondHandRequestDTO(
         String title,
         String description,
         BigDecimal price,
+        BigDecimal priceUzs,
 
         SecondHandCategory subCategory,
         ItemCondition condition,
