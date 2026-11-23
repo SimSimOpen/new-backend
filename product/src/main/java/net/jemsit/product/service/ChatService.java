@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.jemsit.common.UserContext;
 import net.jemsit.common.api.AuthApi;
+import net.jemsit.common.api.OperatorFeedApi;
 import net.jemsit.common.data.enums.Roles;
 import net.jemsit.common.dto.message.ChatEvent;
 import net.jemsit.common.dto.response.auth.ProfileResponseDTO;
@@ -78,6 +79,7 @@ public class ChatService {
     private final NamedParameterJdbcTemplate jdbc;
     private final AuthApi authApi;
     private final ApplicationEventPublisher eventPublisher;
+    private final OperatorFeedApi operatorFeedApi;
 
     /**
      * Opens the caller's conversation about a live listing, creating it on first use. Agents see a
@@ -203,6 +205,11 @@ public class ChatService {
             recipients.add(p.agentId());
         }
         publishAfterCommit(new ChatEvent(recipients, ChatEventPayload.message(message)));
+        // The operator's phone hears about users writing to the admins, not about admins' replies and
+        // never about private client/agent chats. The feed itself waits for this transaction to commit.
+        if (p.support() && p.me() == p.clientId()) {
+            operatorFeedApi.supportMessage(conversationId, message.id(), displayName(p.me()), text);
+        }
         return message;
     }
 

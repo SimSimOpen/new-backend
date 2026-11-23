@@ -56,4 +56,26 @@ public interface OperatorFeedApi {
      *        the username and never the email: this text ends up on a lockscreen and in the outbox.
      */
     void accountRegistered(Roles role, String username);
+
+    /**
+     * A user wrote in their "Talk to admin" conversation. Only the user's own messages count; an
+     * admin's reply is not news to the operator. Private client/agent chats never come here.
+     *
+     * @param messageId the new message, so each message is its own card and buzzes the phone
+     * @param sender display name or phone of the writer; may be null
+     * @param text the message as sent; the implementation shortens it for the lockscreen
+     */
+    void supportMessage(Long conversationId, Long messageId, String sender, String text);
+
+    /**
+     * A signed-in user reported a listing (fake, scam, wrong details...).
+     *
+     * @param kind the listing family ("PROPERTY", "CAR", ...)
+     * @param title the listing's title; may be null
+     * @param reason the reason the user picked, as its enum name
+     * @param details the user's own words; may be null
+     * @param reporter display name or phone of the reporter; may be null
+     */
+    void listingReported(Long reportId, String kind, Long listingId, String title,
+                         String reason, String details, String reporter);
 }

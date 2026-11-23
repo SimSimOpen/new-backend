@@ -102,6 +102,51 @@ public class OperatorFeedApiImpl implements OperatorFeedApi {
                 "high");
     }
 
+    @Override
+    public void supportMessage(Long conversationId, Long messageId, String sender, String text) {
+        String who = sender != null && !sender.isBlank() ? sender.trim() : "a user";
+        // Per message, not per conversation: the phone alerts once per tag, and every message from a
+        // user waiting on an answer should buzz.
+        publish("Message from " + who,
+                shorten(text, 300),
+                "support-" + conversationId + "-" + messageId,
+                "high");
+    }
+
+    @Override
+    public void listingReported(Long reportId, String kind, Long listingId, String title,
+                                String reason, String details, String reporter) {
+        String family = kind != null && !kind.isBlank() ? kind.trim().toLowerCase().replace('_', '-') : "listing";
+        StringBuilder body = new StringBuilder(humanize(reason));
+        if (details != null && !details.isBlank()) {
+            body.append(": ").append(shorten(details, 240));
+        }
+        if (reporter != null && !reporter.isBlank()) {
+            body.append(" - by ").append(reporter.trim());
+        }
+        publish("Complaint: " + listingName(listingId, title) + " (" + family + ")",
+                body.toString(),
+                "report-" + reportId,
+                "high");
+    }
+
+    private static String shorten(String text, int max) {
+        if (text == null) {
+            return null;
+        }
+        String flat = text.strip().replaceAll("\\s+", " ");
+        return flat.length() <= max ? flat : flat.substring(0, max - 1) + "…";
+    }
+
+    /** WRONG_INFO -> "Wrong info". */
+    private static String humanize(String constant) {
+        if (constant == null || constant.isBlank()) {
+            return "Reported";
+        }
+        String words = constant.trim().toLowerCase().replace('_', ' ');
+        return Character.toUpperCase(words.charAt(0)) + words.substring(1);
+    }
+
     private void publish(String title, String body, String tag, String priority) {
         if (!dispatcher.isActive()) {
             return;
