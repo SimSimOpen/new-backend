@@ -99,7 +99,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             AND (CAST(:priceFrom AS numeric) IS NULL OR p.price >= :priceFrom)
             AND (CAST(:priceTo AS numeric) IS NULL OR p.price <= :priceTo)
             AND (CAST(:roomsFrom AS integer) IS NULL OR p.number_of_rooms >= :roomsFrom)
+            AND (CAST(:roomsTo AS integer) IS NULL OR p.number_of_rooms <= :roomsTo)
             AND (CAST(:floorFrom AS integer) IS NULL OR p.floor >= :floorFrom)
+            AND (CAST(:floorTo AS integer) IS NULL OR p.floor <= :floorTo)
             AND (CAST(:amenityParking AS boolean) IS NULL OR am.has_parking = true)
             AND (CAST(:amenitySwimmingPool AS boolean) IS NULL OR am.has_swimming_pool = true)
             AND (CAST(:amenityGym AS boolean) IS NULL OR am.has_gym = true)
@@ -141,7 +143,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             AND (CAST(:priceFrom AS numeric) IS NULL OR p.price >= :priceFrom)
             AND (CAST(:priceTo AS numeric) IS NULL OR p.price <= :priceTo)
             AND (CAST(:roomsFrom AS integer) IS NULL OR p.number_of_rooms >= :roomsFrom)
+            AND (CAST(:roomsTo AS integer) IS NULL OR p.number_of_rooms <= :roomsTo)
             AND (CAST(:floorFrom AS integer) IS NULL OR p.floor >= :floorFrom)
+            AND (CAST(:floorTo AS integer) IS NULL OR p.floor <= :floorTo)
             AND (CAST(:amenityParking AS boolean) IS NULL OR am.has_parking = true)
             AND (CAST(:amenitySwimmingPool AS boolean) IS NULL OR am.has_swimming_pool = true)
             AND (CAST(:amenityGym AS boolean) IS NULL OR am.has_gym = true)
@@ -163,7 +167,9 @@ public interface PropertyRepository extends JpaRepository<Property, Long>, JpaSp
             @Param("priceFrom") BigDecimal priceFrom,
             @Param("priceTo") BigDecimal priceTo,
             @Param("roomsFrom") Integer roomsFrom,
+            @Param("roomsTo") Integer roomsTo,
             @Param("floorFrom") Integer floorFrom,
+            @Param("floorTo") Integer floorTo,
             @Param("amenityParking") Boolean amenityParking,
             @Param("amenitySwimmingPool") Boolean amenitySwimmingPool,
             @Param("amenityGym") Boolean amenityGym,

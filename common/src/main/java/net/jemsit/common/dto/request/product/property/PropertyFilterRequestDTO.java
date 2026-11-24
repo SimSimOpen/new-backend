@@ -19,7 +19,9 @@ public  record PropertyFilterRequestDTO(
         BigDecimal priceFrom,
         BigDecimal priceTo,
         Integer roomsFrom,
+        Integer roomsTo,
         Integer floorFrom,
+        Integer floorTo,
         List<String> amenities,
         /**
          * Opt-in to "my listings", sent by the admin panel only. Without it the caller's identity is

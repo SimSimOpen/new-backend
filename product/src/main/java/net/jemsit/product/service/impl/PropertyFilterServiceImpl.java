@@ -58,7 +58,9 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
                     filterRequest.priceFrom(),
                     filterRequest.priceTo(),
                     filterRequest.roomsFrom(),
+                    filterRequest.roomsTo(),
                     filterRequest.floorFrom(),
+                    filterRequest.floorTo(),
                     amenityFlag(amenities, "parking"),
                     amenityFlag(amenities, "swimmingPool"),
                     amenityFlag(amenities, "gym"),
@@ -114,6 +116,12 @@ public class PropertyFilterServiceImpl implements PropertyFilterService {
             }
             if (filterRequest.floorFrom() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("floor"), filterRequest.floorFrom()));
+            }
+            if (filterRequest.roomsTo() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("numberOfRooms"), filterRequest.roomsTo()));
+            }
+            if (filterRequest.floorTo() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("floor"), filterRequest.floorTo()));
             }
             if (!amenities.isEmpty()) {
                 var amenitiesJoin = root.join("amenities", JoinType.INNER);
