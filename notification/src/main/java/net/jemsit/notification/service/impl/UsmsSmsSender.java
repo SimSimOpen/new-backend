@@ -1,7 +1,5 @@
 package net.jemsit.notification.service.impl;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import net.jemsit.common.exceptions.UserException;
 import net.jemsit.notification.config.UsmsProperties;
@@ -10,6 +8,9 @@ import net.jemsit.notification.service.SmsRequestDTO;
 import net.jemsit.notification.service.SmsService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
+ * Uses Jackson 3 (tools.jackson): Spring Boot 4 registers no com.fasterxml ObjectMapper bean.
+ *
  * Sends login codes through usms.uz (POST {baseUrl}/send). usms.uz only delivers approved templates,
  * so the code goes in as a template parameter rather than as free text.
  */
@@ -102,8 +105,8 @@ public class UsmsSmsSender implements SmsService {
     private String summary(String body) {
         try {
             JsonNode node = objectMapper.readTree(body);
-            return "id=" + node.path("id").asText("?") + " status=" + node.path("status").asText("?");
-        } catch (IOException e) {
+            return "id=" + node.path("id").asString("?") + " status=" + node.path("status").asString("?");
+        } catch (JacksonException e) {
             return body;
         }
     }
