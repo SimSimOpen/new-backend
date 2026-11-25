@@ -10,6 +10,8 @@ import net.jemsit.common.dto.message.MediaUploaded;
 import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
 import net.jemsit.notification.service.NotificationService;
 import net.jemsit.notification.service.OtpStore;
+import net.jemsit.common.exceptions.UserException;
+import net.jemsit.notification.service.SmsNotSentException;
 import net.jemsit.notification.service.SmsRequestDTO;
 import net.jemsit.notification.service.SmsService;
 import net.jemsit.notification.service.SseEmitterRegistry;
@@ -54,7 +56,12 @@ public class NotificationServiceImpl implements NotificationService {
     public void sendOtp(SmsRequestDTO request) {
         String phoneNumber = OtpStore.normalizePhone(request.phoneNumber());
         String otp = otpStore.issue(phoneNumber);
-        smsService.sendSms(new SmsRequestDTO(phoneNumber), otp);
+        try {
+            smsService.sendSms(new SmsRequestDTO(phoneNumber), otp);
+        } catch (SmsNotSentException e) {
+            otpStore.discard(phoneNumber);
+            throw new UserException("Could not send the SMS. Please try again or use Telegram");
+        }
         log.info("OTP issued for phone number {}", phoneNumber);
     }
 

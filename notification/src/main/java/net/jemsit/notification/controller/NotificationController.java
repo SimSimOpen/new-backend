@@ -6,6 +6,8 @@ import net.jemsit.common.UserContext;
 import net.jemsit.common.dto.response.auth.AuthenticationResponseDTO;
 import net.jemsit.notification.service.NotificationService;
 import net.jemsit.notification.service.SmsRequestDTO;
+import net.jemsit.notification.service.SmsService;
+import net.jemsit.notification.telegram.TelegramBotClient;
 import net.jemsit.notification.telegram.TelegramOtpService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +28,14 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final TelegramOtpService telegramOtpService;
+    private final SmsService smsService;
+    private final TelegramBotClient telegramBot;
+
+    /** Which ways of receiving a login code the server can use right now; the sites show only these. */
+    @GetMapping("/otp-channels")
+    public Map<String, Boolean> otpChannels() {
+        return Map.of("sms", smsService.isEnabled(), "telegram", telegramBot.isConfigured());
+    }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream() {

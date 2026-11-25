@@ -44,6 +44,7 @@ public class SecurityConfig {
                                 "/api/auth/v1/firebase-login",
                                 "/api/auth/v1/refresh",
                                 "/api/event/send-otp",
+                                "/api/event/otp-channels",
                                 "/api/event/send-otp-telegram",
                                 "/api/event/verify-otp",
                                 // Presence heartbeats come from anonymous website visitors too.

@@ -47,6 +47,12 @@ public class OtpStore {
         return otp;
     }
 
+    /** Withdraws a code that never reached the user, so they can ask for another one straight away. */
+    public void discard(String phone) {
+        redis.delete(codeKey(phone));
+        redis.delete(cooldownKey(phone));
+    }
+
     /** Consumes the code on success; throws with a user-facing message otherwise. */
     public void verify(String phone, String otp) {
         String stored = redis.opsForValue().get(codeKey(phone));
