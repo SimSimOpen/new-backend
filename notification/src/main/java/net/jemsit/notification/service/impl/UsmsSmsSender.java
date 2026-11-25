@@ -37,18 +37,30 @@ public class UsmsSmsSender implements SmsService {
             .followRedirects(HttpClient.Redirect.NEVER)
             .build();
 
+    /** Null when the configuration is incomplete: SMS login is then reported as off. */
+    private final Long templateId;
+
     public UsmsSmsSender(UsmsProperties props, ObjectMapper objectMapper) {
         this.props = props;
         this.objectMapper = objectMapper;
-        if (isBlank(props.login()) || isBlank(props.secret()) || props.templateId() == null) {
-            // Fail at startup rather than on the first login attempt
-            throw new IllegalStateException(
-                    "app.sms.provider=usms needs USMS_LOGIN, USMS_SECRET and USMS_TEMPLATE_ID");
+        this.templateId = parseTemplateId(props.templateId());
+        // Never stop the whole app over SMS settings: log it and keep SMS login switched off
+        if (isBlank(props.login()) || isBlank(props.secret()) || templateId == null) {
+            log.error("SMS_PROVIDER=usms but USMS_LOGIN, USMS_SECRET or a numeric USMS_TEMPLATE_ID is missing"
+                    + " (template id given: '{}'); SMS login stays off", props.templateId());
         }
     }
 
     @Override
+    public boolean isEnabled() {
+        return !isBlank(props.login()) && !isBlank(props.secret()) && templateId != null;
+    }
+
+    @Override
     public void sendSms(SmsRequestDTO request, String otp) {
+        if (!isEnabled()) {
+            throw new SmsNotSentException("usms.uz is not configured");
+        }
         // usms.uz expects the number as digits only: 998901234567
         String phone = request.phoneNumber().replaceAll("\\D", "");
         Map<String, Object> body = new LinkedHashMap<>();
@@ -56,7 +68,7 @@ public class UsmsSmsSender implements SmsService {
         if (!isBlank(props.from())) {
             body.put("from", props.from());
         }
-        body.put("template_id", props.templateId());
+        body.put("template_id", templateId);
         body.put("params", Map.of(codeParam(), otp));
 
         HttpResponse<String> response;
@@ -103,6 +115,14 @@ public class UsmsSmsSender implements SmsService {
 
     private String codeParam() {
         return isBlank(props.codeParam()) ? "code" : props.codeParam().trim();
+    }
+
+    private static Long parseTemplateId(String value) {
+        try {
+            return isBlank(value) ? null : Long.valueOf(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private static boolean isBlank(String value) {

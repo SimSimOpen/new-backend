@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param login      integration login from the usms.uz cabinet
  * @param secret     integration secret from the usms.uz cabinet
  * @param from       approved sender name ("SMS nik"); empty sends without one
- * @param templateId id of the approved OTP template
+ * @param templateId id of the approved OTP template (kept as text so a bad value cannot stop startup)
  * @param codeParam  name of the template parameter that receives the code
  */
 @ConfigurationProperties(prefix = "usms")
@@ -18,7 +18,7 @@ public record UsmsProperties(
         String login,
         String secret,
         String from,
-        Integer templateId,
+        String templateId,
         String codeParam
 ) {
 }
